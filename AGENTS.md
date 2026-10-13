@@ -1,6 +1,6 @@
 # AGENTS.md — Thee Pori (tp)
 
-Go 1.26+ CLI. Module `github.com/Abhinivesh2729/theepori`.
+Go 1.27+ CLI. Module `github.com/Abhinivesh2729/theepori`.
 
 ## Commands
 - Build: `make build` (→ `bin/tp`)

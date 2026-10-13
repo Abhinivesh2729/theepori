@@ -13,7 +13,7 @@ make install            # builds bin/tp and installs to ~/.local/bin
 make dist               # cross-compiles darwin/linux × amd64/arm64 into dist/
 ```
 
-Requires Go 1.26+ to build. Runs on macOS and Linux.
+Requires Go 1.27+ to build. Runs on macOS and Linux.
 
 ## Quick start
 
