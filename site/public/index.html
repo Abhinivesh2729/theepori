@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Thee Pori: the tp coding agent</title>
-<meta name="description" content="Thee Pori (தீப்பொறி) is a local-first AI coding agent for your terminal. One binary, your choice of model, every change shown before it happens.">
-<meta property="og:title" content="Thee Pori (தீப்பொறி): a local-first AI coding agent">
-<meta property="og:description" content="Install with one command. Understand → Plan → Modify → Test → Review, right in your terminal.">
+<title>Thee Pori: build and run a software factory</title>
+<meta name="description" content="Thee Pori (தீப்பொறி) is a terminal agent for building and running a software factory: many projects, one agent. Use Claude, OpenAI, or a private model on your phone with Thinai.">
+<meta property="og:title" content="Thee Pori (தீப்பொறி): build and run a software factory from your terminal">
+<meta property="og:description" content="Not just a coding agent. One agent for all your projects, with Claude, OpenAI or Thinai running offline on your phone.">
 <meta name="theme-color" content="#16110e">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -161,6 +161,27 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space
 .social svg { width: 22px; height: 22px; flex: none; }
 .social span { display: flex; flex-direction: column; text-align: left; line-height: 1.3; }
 .social small { color: var(--muted); font-weight: 500; }
+.tag { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .02em; padding: 2px 10px; border-radius: 999px; margin-bottom: 10px; }
+.tag.now { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); border: 1px solid color-mix(in srgb, var(--ok) 35%, transparent); }
+.tag.next { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+.status-line { font-size: 14px; color: var(--muted); margin: -12px auto 26px; }
+.status-line .tag { margin: 0 4px 0 0; }
+.thinai { display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: center; }
+@media (max-width: 800px) { .thinai { grid-template-columns: 1fr; } }
+.ticks { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 8px; }
+.ticks li::before { content: "✔"; color: var(--ok); font-weight: 700; margin-right: 10px; }
+.fine { font-size: 14px; color: var(--muted); margin: 0; }
+.fine code, .ticks code { font-size: 13px; background: var(--bg2); padding: 1px 6px; border-radius: 6px; }
+.phone { justify-self: center; width: 250px; border-radius: 32px; padding: 22px 18px; background: var(--code-bg); color: var(--code-text);
+  border: 6px solid #2b211b; box-shadow: var(--shadow); display: grid; gap: 10px; font-size: 14px; }
+.phone-top { font-weight: 700; text-align: center; padding-bottom: 6px; border-bottom: 1px solid #2a211b; }
+.phone-row { display: flex; align-items: center; gap: 8px; }
+.phone-row.dim { color: #8f8077; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+.phone-url { font-size: 12.5px; background: #1d1612; border-radius: 8px; padding: 8px 10px; color: #ffb15c; }
+.phone-link { text-align: center; color: #ff8a1f; font-size: 20px; }
+.phone-term { font-size: 12.5px; background: #000; border-radius: 10px; padding: 10px; line-height: 1.6; }
+.pillars .card h3 { margin-top: 2px; }
 .theme-btn { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 8px; padding: 4px 10px; cursor: pointer; font: inherit; font-size: 13px; }
 </style>
 </head>
@@ -174,8 +195,8 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space
     <div class="links">
       <a href="#install">Install</a>
       <a class="opt2" href="#start">Get started</a>
-      <a class="opt" href="#features">Features</a>
-      <a class="opt" href="#commands">Commands</a>
+      <a class="opt" href="#factory">Factory</a>
+      <a class="opt" href="#thinai">Thinai</a>
       <a class="opt" href="https://github.com/Abhinivesh2729/theepori">GitHub</a>
       <a class="nav-cta" href="#contact">Contact</a>
     </div>
@@ -207,8 +228,9 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space
     <svg class="flame" viewBox="0 0 64 80" aria-hidden="true"><g class="flick"><use href="#flame-shape"/></g></svg>
     <p class="tamil" lang="ta" aria-label="Thee Pori"><span>தீ</span><span>ப்</span><span>பொ</span><span>றி</span></p>
     <p class="name">Thee Pori · tp</p>
-    <h1>The coding agent that lives in your terminal</h1>
-    <p class="lede">Describe a task. tp reads your code, plans, edits, runs your tests and shows you every change before it lands. One small binary, your choice of model, no server.</p>
+    <h1>Don't just build a project. Run a software factory.</h1>
+    <p class="lede">Other coding agents help you build one project. Thee Pori is growing into one agent that knows all your projects and builds, ships and maintains them, from your terminal. Use Claude or OpenAI, or keep everything private with a model running offline on your phone.</p>
+    <p class="status-line"><span class="tag now">Available now</span> the coding agent at the core &nbsp;·&nbsp; <span class="tag next">Coming next</span> the factory, built in the open</p>
 
     <div class="install" id="install">
       <div class="tabs" role="tablist">
@@ -223,13 +245,51 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space
     </div>
 
     <div class="badges">
+      <span class="badge">Software factory</span>
+      <span class="badge">Thinai: offline on your phone</span>
       <span class="badge">Claude &amp; OpenAI</span>
-      <span class="badge">Approve every edit</span>
-      <span class="badge">Keys in your Keychain</span>
       <span class="badge">Open source · MIT</span>
     </div>
   </div>
 </header>
+
+<section class="alt" id="factory">
+  <div class="wrap">
+    <h2>Not another coding agent</h2>
+    <p class="sub">A coding agent works inside one repository. A software factory is everything around it: many products, their knowledge, their releases and their upkeep. Thee Pori is being built to run all of it with one agent.</p>
+    <div class="grid g2 pillars">
+      <div class="card"><span class="tag now">Available now</span><h3>The coding loop</h3><p>Understand, plan, modify, test and review in any repository, with every change shown before it lands. This is the engine the factory runs on.</p></div>
+      <div class="card"><span class="tag next">Coming next</span><h3>Multi-project workspace</h3><p>Register all your projects once. See status, open work, sessions and spend across every project from one place, and move between them without losing context.</p></div>
+      <div class="card"><span class="tag next">Coming next</span><h3>Project knowledge</h3><p>Each project keeps its PRD, architecture, decisions, tasks and runbook. The agent reads them before it works and updates them after, so nothing lives only in someone's head.</p></div>
+      <div class="card"><span class="tag next">Coming next</span><h3>Lifecycle operations</h3><p>Branches and pull requests on GitHub, tickets in Jira, CI and deploys. Building, shipping and maintaining from the same agent, with approval required for anything that touches production.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="thinai">
+  <div class="wrap thinai">
+    <div>
+      <span class="tag next">Coming next</span>
+      <h2>Your phone is a private model server</h2>
+      <p class="sub">Connect <a href="https://play.google.com/store/apps/details?id=in.atmega.thinai" target="_blank" rel="noopener">Thinai</a>, the Android app that runs AI models offline, and Thee Pori uses it like any other model provider. Your code never leaves your Wi-Fi.</p>
+      <ul class="ticks">
+        <li><b>Private:</b> prompts and code stay on your own network.</li>
+        <li><b>Free to run:</b> no API key and no per-token bill.</li>
+        <li><b>Works offline:</b> on a plane, behind a firewall, anywhere.</li>
+        <li><b>Zero setup:</b> tp finds the phone on your Wi-Fi by itself.</li>
+      </ul>
+      <p class="fine">Best for focused tasks on private code. Switch to Claude or OpenAI with <code>/model</code> for heavy, multi-step work. The Thinai connection is already in tp; one-step setup in <code>tp providers</code> is next.</p>
+    </div>
+    <div class="phone" aria-hidden="true">
+      <div class="phone-top">Thinai · Server</div>
+      <div class="phone-row"><span class="dot"></span> Running on Wi-Fi</div>
+      <div class="phone-url mono">http://192.168.1.36:11434</div>
+      <div class="phone-row dim">Model: loaded on device</div>
+      <div class="phone-link">↔</div>
+      <div class="phone-term mono"><span class="c-o">tp</span> providers<br><span class="c-ok">✔</span> found Thinai on your Wi-Fi</div>
+    </div>
+  </div>
+</section>
 
 <section class="alt" id="start">
   <div class="wrap">
@@ -291,10 +351,10 @@ Fixed both bugs in Total; tests pass.
 
 <section class="alt" id="features">
   <div class="wrap">
-    <h2>What you get</h2>
-    <p class="sub">Built for developers who want an agent they can trust in a real codebase.</p>
+    <h2>Available today</h2>
+    <p class="sub">Everything below ships in v0.1 and works in any repository right now.</p>
     <div class="grid g3">
-      <div class="card"><h3>Your choice of model</h3><p>Anthropic Claude (default: Claude Opus 5.5) and OpenAI. Ollama and Thinai (offline models on your phone) are coming next. Switch any time with <code>/model</code>.</p></div>
+      <div class="card"><h3>Your choice of model</h3><p>Anthropic Claude (default: Claude Opus 5.5) and OpenAI today; Thinai and Ollama next. Switch any time with <code>/model</code>.</p></div>
       <div class="card"><h3>You stay in control</h3><p>Reading is free. File edits and commands ask first, with a diff. Destructive commands like <code>rm -rf</code>, <code>git push</code> or deploys always need a typed “yes”.</p></div>
       <div class="card"><h3>Sessions that survive</h3><p>Saved after every step. Ctrl-C or a crash loses nothing: <code>tp -c</code> resumes. <code>/undo</code> reverts the last turn's file changes.</p></div>
       <div class="card"><h3>Knows your project</h3><p>Follows <code>AGENTS.md</code> / <code>CLAUDE.md</code>, respects <code>.gitignore</code>, detects your test command, and remembers decisions with <code>/remember</code>.</p></div>
@@ -368,10 +428,24 @@ Fixed both bugs in Total; tests pass.
   </div>
 </section>
 
+<section class="alt" id="roadmap">
+  <div class="wrap">
+    <h2>Roadmap</h2>
+    <p class="sub">Built in the open. Follow along on GitHub, X or Instagram.</p>
+    <div class="grid g3">
+      <div class="card"><span class="tag now">v0.1 · now</span><h3>The coding agent</h3><p>Coding loop, Claude and OpenAI, permission modes, sessions and undo, plan and review, one-line install.</p></div>
+      <div class="card"><span class="tag next">Next</span><h3>Local and private</h3><p>Thinai and Ollama in <code>tp providers</code>: pick your phone or local server with the arrow keys, no key needed.</p></div>
+      <div class="card"><span class="tag next">Then</span><h3>The factory</h3><p>Multi-project workspace, project knowledge, and lifecycle operations with GitHub, Jira, CI and deploys.</p></div>
+    </div>
+  </div>
+</section>
+
 <section id="faq">
   <div class="wrap">
     <h2>Questions</h2>
     <p class="sub">Short answers.</p>
+    <details><summary>What is a software factory?</summary><p>Running several software products the way a factory runs production lines: one operator that knows every project's goals, code, open work and releases, and moves each forward. Thee Pori's coding agent is available today; the multi-project workspace, project knowledge and lifecycle operations are coming next.</p></details>
+    <details><summary>What is Thinai?</summary><p>An Android app that runs AI models offline on your phone and shares them over your Wi-Fi. Thee Pori can use it as a model provider, so private code never leaves your network and there is no API bill.</p></details>
     <details><summary>What do I need?</summary><p>macOS 12+ (Intel or Apple Silicon) or Linux (x86_64 or arm64), plus an Anthropic or OpenAI API key. On Windows, use WSL for now. Git is recommended.</p></details>
     <details><summary>Where is my API key stored?</summary><p>In the macOS Keychain (on Linux, the system keyring, or a private 0600 file). It never goes into a config file. An exported <code>ANTHROPIC_API_KEY</code> or <code>OPENAI_API_KEY</code> also works and takes priority.</p></details>
     <details><summary>Does my code leave my machine?</summary><p>Only the files the agent reads are sent, and only to the model provider you configured. tp has no server and collects no telemetry.</p></details>
