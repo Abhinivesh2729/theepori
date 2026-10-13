@@ -12,7 +12,7 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
-<meta property="og:image" content="https://tp.0xabby.space/icon-512.png">
+<meta property="og:image" content="https://tp.0xabhi.space/icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Tamil:wght@700;800&display=swap" rel="stylesheet">
@@ -234,11 +234,11 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space
 
     <div class="install" id="install">
       <div class="tabs" role="tablist">
-        <button class="tab" role="tab" aria-selected="true" data-cmd="curl -fsSL https://tp.0xabby.space/install.sh | sh" data-note="macOS (Intel &amp; Apple Silicon) and Linux (x86_64 &amp; arm64). Installs to ~/.local/bin, no sudo needed.">macOS / Linux</button>
+        <button class="tab" role="tab" aria-selected="true" data-cmd="curl -fsSL https://tp.0xabhi.space/install.sh | sh" data-note="macOS (Intel &amp; Apple Silicon) and Linux (x86_64 &amp; arm64). Installs to ~/.local/bin, no sudo needed.">macOS / Linux</button>
         <button class="tab" role="tab" aria-selected="false" data-cmd="wsl --install" data-note="Native Windows support is coming. For now: run this in PowerShell, restart, open Ubuntu, then run the macOS / Linux command inside it.">Windows</button>
       </div>
       <div class="cmd">
-        <code id="cmd">curl -fsSL https://tp.0xabby.space/install.sh | sh</code>
+        <code id="cmd">curl -fsSL https://tp.0xabhi.space/install.sh | sh</code>
         <button class="copy" id="copy" type="button">Copy</button>
       </div>
       <p class="note" id="note">macOS (Intel &amp; Apple Silicon) and Linux (x86_64 &amp; arm64). Installs to ~/.local/bin, no sudo needed.</p>
@@ -300,7 +300,7 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space
         <div class="step-n">1</div>
         <h3>Install</h3>
         <p>Paste the command above into your terminal. It verifies the download's checksum before installing.</p>
-        <div class="snippet mono">curl -fsSL https://tp.0xabby.space/install.sh | sh</div>
+        <div class="snippet mono">curl -fsSL https://tp.0xabhi.space/install.sh | sh</div>
       </div>
       <div class="card">
         <div class="step-n">2</div>
@@ -450,8 +450,8 @@ Fixed both bugs in Total; tests pass.
     <details><summary>Where is my API key stored?</summary><p>In the macOS Keychain (on Linux, the system keyring, or a private 0600 file). It never goes into a config file. An exported <code>ANTHROPIC_API_KEY</code> or <code>OPENAI_API_KEY</code> also works and takes priority.</p></details>
     <details><summary>Does my code leave my machine?</summary><p>Only the files the agent reads are sent, and only to the model provider you configured. tp has no server and collects no telemetry.</p></details>
     <details><summary>How do I update?</summary><p>Run the install command again. It replaces the binary and keeps your settings and sessions.</p></details>
-    <details><summary>How do I uninstall?</summary><p><code>curl -fsSL https://tp.0xabby.space/install.sh | sh -s -- --uninstall</code> removes the binary. Your settings and sessions are kept; the command prints how to delete them too.</p></details>
-    <details><summary>Can I install a specific version?</summary><p><code>curl -fsSL https://tp.0xabby.space/install.sh | TP_VERSION=v0.1.0 sh</code>. Use <code>TP_INSTALL_DIR</code> to change the install location.</p></details>
+    <details><summary>How do I uninstall?</summary><p><code>curl -fsSL https://tp.0xabhi.space/install.sh | sh -s -- --uninstall</code> removes the binary. Your settings and sessions are kept; the command prints how to delete them too.</p></details>
+    <details><summary>Can I install a specific version?</summary><p><code>curl -fsSL https://tp.0xabhi.space/install.sh | TP_VERSION=v0.1.0 sh</code>. Use <code>TP_INSTALL_DIR</code> to change the install location.</p></details>
   </div>
 </section>
 

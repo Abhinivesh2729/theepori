@@ -33,7 +33,7 @@ dist:
 clean:
 	rm -rf bin dist
 
-# Landing page + installer → https://tp.0xabby.space (Cloudflare Worker, static assets)
+# Landing page + installer → https://tp.0xabhi.space (Cloudflare Worker, static assets)
 site:
 	cp install.sh site/public/install.sh
 

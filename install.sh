@@ -1,13 +1,13 @@
 #!/bin/sh
-# Thee Pori (தீப்பொறி) installer: https://tp.0xabby.space
+# Thee Pori (தீப்பொறி) installer: https://tp.0xabhi.space
 #
-#   curl -fsSL https://tp.0xabby.space/install.sh | sh
+#   curl -fsSL https://tp.0xabhi.space/install.sh | sh
 #
 # Options (environment variables):
 #   TP_VERSION=v0.1.0          install a specific release (default: latest)
 #   TP_INSTALL_DIR=/usr/local/bin   install location (default: ~/.local/bin)
 # Uninstall:
-#   curl -fsSL https://tp.0xabby.space/install.sh | sh -s -- --uninstall
+#   curl -fsSL https://tp.0xabhi.space/install.sh | sh -s -- --uninstall
 #
 # The whole script is wrapped in main() so a partial download never runs.
 set -eu
@@ -74,7 +74,7 @@ main() {
 	printf '\n%s\n' "${B}Next${N}"
 	printf '%s\n' "  tp providers     ${D}# add Anthropic or OpenAI: pick with ↑/↓, paste your API key${N}"
 	printf '%s\n' "  cd your-project && tp"
-	printf '%s\n' "${D}  docs: https://tp.0xabby.space${N}"
+	printf '%s\n' "${D}  docs: https://tp.0xabhi.space${N}"
 }
 
 detect_os() {

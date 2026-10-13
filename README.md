@@ -9,16 +9,16 @@ Understand → Plan → Modify → Test → Review
 ## Install
 
 ```bash
-curl -fsSL https://tp.0xabby.space/install.sh | sh
+curl -fsSL https://tp.0xabhi.space/install.sh | sh
 ```
 
 This works on macOS (Intel and Apple Silicon) and Linux (x86_64 and arm64). It verifies the SHA-256 checksum and installs to `~/.local/bin` without needing sudo. On Windows, use WSL for now.
 
 | Option | How |
 |---|---|
-| Specific version | `curl -fsSL https://tp.0xabby.space/install.sh \| TP_VERSION=v0.1.0 sh` |
+| Specific version | `curl -fsSL https://tp.0xabhi.space/install.sh \| TP_VERSION=v0.1.0 sh` |
 | Other location | `TP_INSTALL_DIR=/usr/local/bin` |
-| Uninstall | `curl -fsSL https://tp.0xabby.space/install.sh \| sh -s -- --uninstall` |
+| Uninstall | `curl -fsSL https://tp.0xabhi.space/install.sh \| sh -s -- --uninstall` |
 | From source | `make install` (Go 1.27+) |
 
 ## Releasing
