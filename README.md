@@ -9,11 +9,25 @@ Understand → Plan → Modify → Test → Review
 ## Install
 
 ```bash
-make install            # builds bin/tp and installs to ~/.local/bin
-make dist               # cross-compiles darwin/linux × amd64/arm64 into dist/
+curl -fsSL https://tp.0xabby.space/install.sh | sh
 ```
 
-Requires Go 1.27+ to build. Runs on macOS and Linux.
+This works on macOS (Intel and Apple Silicon) and Linux (x86_64 and arm64). It verifies the SHA-256 checksum and installs to `~/.local/bin` without needing sudo. On Windows, use WSL for now.
+
+| Option | How |
+|---|---|
+| Specific version | `curl -fsSL https://tp.0xabby.space/install.sh \| TP_VERSION=v0.1.0 sh` |
+| Other location | `TP_INSTALL_DIR=/usr/local/bin` |
+| Uninstall | `curl -fsSL https://tp.0xabby.space/install.sh \| sh -s -- --uninstall` |
+| From source | `make install` (Go 1.27+) |
+
+## Releasing
+
+```bash
+git tag v0.1.0 && git push --tags
+```
+
+GitHub Actions runs the tests on Apple Silicon and Linux. GoReleaser then publishes `tp_{darwin,linux}_{amd64,arm64}.tar.gz`, `checksums.txt` and `install.sh` to GitHub Releases. Finally, a job installs the release on an Apple Silicon runner and runs it. Use `make snapshot` for a local dry run, and `make site-deploy` to publish the landing page.
 
 ## Quick start
 

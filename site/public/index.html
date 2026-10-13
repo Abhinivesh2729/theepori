@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thee Pori — tp coding agent</title>
+<meta name="description" content="Thee Pori (தீப்பொறி) is a local-first AI coding agent for your terminal. One binary, your choice of model, every change shown before it happens.">
+<meta property="og:title" content="Thee Pori (தீப்பொறி) — local-first AI coding agent">
+<meta property="og:description" content="Install with one command. Understand → Plan → Modify → Test → Review, right in your terminal.">
+<meta name="theme-color" content="#16110e">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='1' x2='0' y2='0'%3E%3Cstop offset='0' stop-color='%23ffb000'/%3E%3Cstop offset='.55' stop-color='%23ff6a00'/%3E%3Cstop offset='1' stop-color='%23e8261c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23g)' d='M33 3c3 12 15 17 15 33a16 16 0 0 1-32 0c0-8 4-13 8-17 0 6 2 9 5 10-2-10 1-18 4-26z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Tamil:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fffaf5; --bg2: #fff3e8; --card: #ffffff; --line: #f0dfcf;
+  --text: #1d1410; --muted: #6b5a4f; --code-bg: #1d1612; --code-text: #f6ede6;
+  --accent: #e35d00; --accent-2: #c2410c; --ok: #15803d;
+  --t1: #c98a00; --t2: #e07000; --t3: #e04e00; --t4: #cf2a1e;
+  --shadow: 0 1px 2px rgba(60,30,10,.06), 0 8px 24px rgba(60,30,10,.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14100d; --bg2: #1b1511; --card: #1f1814; --line: #33271f;
+    --text: #f6ede6; --muted: #b5a397; --code-bg: #0e0b09; --code-text: #f6ede6;
+    --accent: #ff8a1f; --accent-2: #ffb15c; --ok: #4ade80;
+    --t1: #ffd60a; --t2: #ffb000; --t3: #ff7a00; --t4: #ff3b1f;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14100d; --bg2: #1b1511; --card: #1f1814; --line: #33271f;
+  --text: #f6ede6; --muted: #b5a397; --code-bg: #0e0b09; --code-text: #f6ede6;
+  --accent: #ff8a1f; --accent-2: #ffb15c; --ok: #4ade80;
+  --t1: #ffd60a; --t2: #ffb000; --t3: #ff7a00; --t4: #ff3b1f;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre, .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+
+/* nav */
+nav { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--text); }
+.brand:hover { text-decoration: none; }
+.brand svg { width: 22px; height: 22px; }
+.links { display: flex; gap: 20px; font-size: 14px; font-weight: 500; }
+.links a { color: var(--muted); }
+.links a:hover { color: var(--text); text-decoration: none; }
+@media (max-width: 640px) { .links .opt { display: none; } }
+
+/* hero */
+.hero { padding: 64px 0 40px; text-align: center; }
+.flame { width: 84px; height: 108px; margin: 0 auto 8px; display: block; filter: drop-shadow(0 8px 24px rgba(255,106,0,.35)); }
+.flame .flick { transform-origin: 50% 100%; animation: flick 2.6s ease-in-out infinite; }
+@keyframes flick { 0%,100% { transform: scale(1,1) skewX(0); } 40% { transform: scale(.97,1.03) skewX(-1.5deg); } 70% { transform: scale(1.02,.98) skewX(1deg); } }
+@media (prefers-reduced-motion: reduce) { .flame .flick { animation: none; } }
+.tamil { font-family: "Noto Sans Tamil", "Tamil Sangam MN", sans-serif; font-weight: 800;
+  font-size: clamp(44px, 9vw, 76px); line-height: 1.25; letter-spacing: .01em; margin: 0; }
+.tamil span:nth-child(1) { color: var(--t1); }
+.tamil span:nth-child(2) { color: var(--t2); }
+.tamil span:nth-child(3) { color: var(--t3); }
+.tamil span:nth-child(4) { color: var(--t4); }
+.name { font-size: 15px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 4px 0 18px; }
+.hero h1 { font-size: clamp(26px, 4.4vw, 40px); line-height: 1.2; margin: 0 auto 12px; max-width: 760px; letter-spacing: -.02em; }
+.hero .lede { font-size: 18px; color: var(--muted); max-width: 640px; margin: 0 auto 28px; }
+
+/* install */
+.install { max-width: 680px; margin: 0 auto; text-align: left; }
+.tabs { display: flex; gap: 4px; margin-bottom: -1px; }
+.tab { border: 1px solid var(--line); border-bottom: none; background: var(--bg2); color: var(--muted);
+  padding: 8px 14px; font: 600 13px Inter, sans-serif; border-radius: 10px 10px 0 0; cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--code-bg); color: var(--code-text); border-color: var(--code-bg); }
+.cmd { display: flex; align-items: center; gap: 12px; background: var(--code-bg); color: var(--code-text);
+  border-radius: 0 12px 12px 12px; padding: 16px 16px 16px 20px; box-shadow: var(--shadow); }
+.cmd code { flex: 1; font-size: 15px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+.cmd code::before { content: "$ "; color: #ff8a1f; }
+.copy { flex: none; border: 1px solid #4a3a30; background: #2a211b; color: var(--code-text); border-radius: 8px;
+  padding: 8px 14px; font: 600 13px Inter, sans-serif; cursor: pointer; min-width: 78px; }
+.copy:hover { background: #3a2d25; }
+.copy.done { color: #4ade80; border-color: #2f6b45; }
+.note { font-size: 13px; color: var(--muted); margin: 10px 2px 0; }
+.badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 22px; }
+.badge { font-size: 13px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--card); }
+
+/* sections */
+section { padding: 56px 0; }
+section.alt { background: var(--bg2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+h2 { font-size: clamp(24px, 3.4vw, 32px); letter-spacing: -.02em; margin: 0 0 8px; }
+.sub { color: var(--muted); margin: 0 0 28px; max-width: 680px; }
+.grid { display: grid; gap: 16px; }
+.grid > *, .flow > * { min-width: 0; }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g2 { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 860px) { .g3 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .g3, .g2 { grid-template-columns: 1fr; } }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; box-shadow: var(--shadow); }
+.card h3 { margin: 0 0 6px; font-size: 17px; }
+.card p { margin: 0; color: var(--muted); font-size: 15px; }
+.card code { font-size: 13px; background: var(--bg2); padding: 1px 6px; border-radius: 6px; color: var(--text); }
+.step-n { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, #ffb000, #ff3b1f); color: #fff; font-weight: 800; font-size: 14px; margin-bottom: 10px; }
+.snippet { margin-top: 12px; background: var(--code-bg); color: var(--code-text); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; overflow-x: auto; white-space: nowrap; }
+
+/* workflow */
+.flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; counter-reset: f; }
+@media (max-width: 860px) { .flow { grid-template-columns: 1fr; } }
+.flow div { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; position: relative; }
+.flow b { display: block; font-size: 16px; margin-bottom: 4px; }
+.flow b::before { counter-increment: f; content: counter(f) " · "; color: var(--accent); }
+.flow span { color: var(--muted); font-size: 14px; }
+
+/* terminal demo */
+.term { background: var(--code-bg); color: var(--code-text); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+.term .bar { display: flex; gap: 6px; padding: 12px 14px; border-bottom: 1px solid #2a211b; }
+.term .bar i { width: 11px; height: 11px; border-radius: 50%; background: #3a2d25; }
+.term pre { margin: 0; padding: 18px 20px; font-size: 13.5px; line-height: 1.65; overflow-x: auto; }
+.c-dim { color: #8f8077; } .c-ok { color: #4ade80; } .c-add { color: #4ade80; } .c-del { color: #f87171; }
+.c-y { color: #fbbf24; } .c-c { color: #67e8f9; } .c-o { color: #ff8a1f; } .c-b { font-weight: 600; }
+
+/* tables */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--card); box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th, td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); background: var(--bg2); }
+tr:last-child td { border-bottom: none; }
+td code { font-size: 13.5px; white-space: nowrap; }
+.yes { color: var(--ok); font-weight: 700; } .ask { color: var(--accent); font-weight: 700; } .no { color: var(--muted); }
+
+/* faq */
+details { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; }
+summary { cursor: pointer; font-weight: 600; }
+details p { color: var(--muted); margin: 10px 0 0; }
+
+footer { padding: 36px 0 48px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
+.theme-btn { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 8px; padding: 4px 10px; cursor: pointer; font: inherit; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Thee Pori home">
+      <svg viewBox="0 0 64 80" aria-hidden="true"><use href="#flame-shape"/></svg> tp
+    </a>
+    <div class="links">
+      <a href="#install">Install</a>
+      <a href="#start">Get started</a>
+      <a class="opt" href="#features">Features</a>
+      <a class="opt" href="#commands">Commands</a>
+      <a href="https://github.com/Abhinivesh2729/theepori">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="fg" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#ffb000"/>
+      <stop offset=".5" stop-color="#ff6a00"/>
+      <stop offset="1" stop-color="#e8261c"/>
+    </linearGradient>
+    <linearGradient id="core" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#fff3b0"/>
+      <stop offset="1" stop-color="#ffd60a"/>
+    </linearGradient>
+    <g id="flame-shape">
+      <path fill="url(#fg)" d="M34 2c4 16 20 23 20 45a22 22 0 0 1-44 0c0-11 5-18 11-23 0 8 3 12 7 14-3-14 1-25 6-36z"/>
+      <path fill="url(#core)" d="M32 40c3 7 10 10 10 19a10 10 0 0 1-20 0c0-5 3-8 5-10 0 4 2 6 4 6-1-6 0-10 1-15z"/>
+    </g>
+  </defs>
+</svg>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <svg class="flame" viewBox="0 0 64 80" aria-hidden="true"><g class="flick"><use href="#flame-shape"/></g></svg>
+    <p class="tamil" lang="ta" aria-label="Thee Pori"><span>தீ</span><span>ப்</span><span>பொ</span><span>றி</span></p>
+    <p class="name">Thee Pori · tp</p>
+    <h1>The coding agent that lives in your terminal</h1>
+    <p class="lede">Describe a task. tp reads your code, plans, edits, runs your tests and shows you every change before it lands. One small binary, your choice of model, no server.</p>
+
+    <div class="install" id="install">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" aria-selected="true" data-cmd="curl -fsSL https://tp.0xabby.space/install.sh | sh" data-note="macOS (Intel &amp; Apple Silicon) and Linux (x86_64 &amp; arm64). Installs to ~/.local/bin — no sudo.">macOS / Linux</button>
+        <button class="tab" role="tab" aria-selected="false" data-cmd="wsl --install" data-note="Native Windows support is coming. For now: run this in PowerShell, restart, open Ubuntu, then run the macOS / Linux command inside it.">Windows</button>
+      </div>
+      <div class="cmd">
+        <code id="cmd">curl -fsSL https://tp.0xabby.space/install.sh | sh</code>
+        <button class="copy" id="copy" type="button">Copy</button>
+      </div>
+      <p class="note" id="note">macOS (Intel &amp; Apple Silicon) and Linux (x86_64 &amp; arm64). Installs to ~/.local/bin — no sudo.</p>
+    </div>
+
+    <div class="badges">
+      <span class="badge">Claude &amp; OpenAI</span>
+      <span class="badge">Approve every edit</span>
+      <span class="badge">Keys in your Keychain</span>
+      <span class="badge">Open source · MIT</span>
+    </div>
+  </div>
+</header>
+
+<section class="alt" id="start">
+  <div class="wrap">
+    <h2>Up and running in 3 steps</h2>
+    <p class="sub">No config files to write. No environment variables to set.</p>
+    <div class="grid g3">
+      <div class="card">
+        <div class="step-n">1</div>
+        <h3>Install</h3>
+        <p>Paste the command above into your terminal. It verifies the download's checksum before installing.</p>
+        <div class="snippet mono">curl -fsSL https://tp.0xabby.space/install.sh | sh</div>
+      </div>
+      <div class="card">
+        <div class="step-n">2</div>
+        <h3>Add a model provider</h3>
+        <p>Pick Anthropic or OpenAI with the arrow keys and paste your API key. tp checks it, stores it in your system keychain and lets you choose a default model.</p>
+        <div class="snippet mono">tp providers</div>
+      </div>
+      <div class="card">
+        <div class="step-n">3</div>
+        <h3>Start coding</h3>
+        <p>Open any project and describe what you want. Or run a one-off task straight from your shell.</p>
+        <div class="snippet mono">cd my-app &amp;&amp; tp</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>How it works</h2>
+    <p class="sub">Every task follows the same reliable loop.</p>
+    <div class="flow">
+      <div><b>Understand</b><span>Explores the repo, reads the code you'll touch and your <code>AGENTS.md</code>.</span></div>
+      <div><b>Plan</b><span>Publishes a checklist for anything bigger than a one-liner.</span></div>
+      <div><b>Modify</b><span>Makes focused edits. You see the diff and approve it.</span></div>
+      <div><b>Test</b><span>Runs your test suite, reads failures, fixes them.</span></div>
+      <div><b>Review</b><span>Summarises changes, test results and what's left.</span></div>
+    </div>
+    <div class="term" style="margin-top:24px" aria-label="Example tp session">
+      <div class="bar"><i></i><i></i><i></i></div>
+<pre><span class="c-b">›</span> the discount in cart.go is wrong, fix it
+<span class="c-c">●</span> <span class="c-b">read_file</span> cart.go               <span class="c-dim">⎿ 20 lines</span>
+<span class="c-dim">The loop skips the first item and the check uses &gt; instead of &gt;=.</span>
+<span class="c-y">●</span> <span class="c-b">edit_file</span> edit cart.go (+3 -3)
+<span class="c-y">╭─ edit_file · write</span>
+<span class="c-y">│</span> <span class="c-del">-	for i := 1; i &lt; len(items); i++ {</span>
+<span class="c-y">│</span> <span class="c-add">+	for _, it := range items {</span>
+<span class="c-y">│</span> <span class="c-del">-	if sub &gt; 10000 {</span>
+<span class="c-y">│</span> <span class="c-add">+	if sub &gt;= 10000 {</span>
+<span class="c-y">╰─</span> Allow? <span class="c-b">[y]</span> yes · <span class="c-b">[a]</span> always · <span class="c-b">[n]</span> no — or type feedback: <span class="c-o">y</span>
+<span class="c-y">●</span> <span class="c-b">run_tests</span> go test ./...          <span class="c-ok">⎿ passed · 0.7s</span>
+
+Fixed both bugs in Total; tests pass.
+<span class="c-dim">4.4k in (+11k cached) · 752 out · ~$0.039</span></pre>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="features">
+  <div class="wrap">
+    <h2>What you get</h2>
+    <p class="sub">Built for developers who want an agent they can trust in a real codebase.</p>
+    <div class="grid g3">
+      <div class="card"><h3>Your choice of model</h3><p>Anthropic Claude (default: Claude Opus 5.5) and OpenAI. Ollama and Thinai (offline models on your phone) are coming next. Switch any time with <code>/model</code>.</p></div>
+      <div class="card"><h3>You stay in control</h3><p>Reading is free. File edits and commands ask first, with a diff. Destructive commands like <code>rm -rf</code>, <code>git push</code> or deploys always need a typed “yes”.</p></div>
+      <div class="card"><h3>Sessions that survive</h3><p>Saved after every step. Ctrl-C or a crash loses nothing: <code>tp -c</code> resumes. <code>/undo</code> reverts the last turn's file changes.</p></div>
+      <div class="card"><h3>Knows your project</h3><p>Follows <code>AGENTS.md</code> / <code>CLAUDE.md</code>, respects <code>.gitignore</code>, detects your test command, and remembers decisions with <code>/remember</code>.</p></div>
+      <div class="card"><h3>Secrets stay secret</h3><p>Keys live in your OS keychain, are redacted from logs and never passed to commands the agent runs. <code>.env</code> files and private keys are off-limits.</p></div>
+      <div class="card"><h3>Cost you can see</h3><p>Token usage and estimated cost after every turn. Prompt caching cuts repeat input cost; long sessions are compacted automatically.</p></div>
+      <div class="card"><h3>Plan before you build</h3><p><code>tp plan "…"</code> investigates read-only and proposes files, steps, tests and risks. Say “go” to implement.</p></div>
+      <div class="card"><h3>Code review built in</h3><p><code>tp review</code> reviews your uncommitted changes, staged work or a whole branch (<code>--base main</code>), most severe first.</p></div>
+      <div class="card"><h3>Local-first</h3><p>A single Go binary. No account, no server, no telemetry. Your code goes only to the model provider you choose.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="modes">
+  <div class="wrap">
+    <h2>Permission modes</h2>
+    <p class="sub">Pick how much the agent may do on its own. Switch with <code>/mode</code> or <code>--mode</code>.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Mode</th><th>Read files</th><th>Edit files</th><th>Run commands</th><th>Destructive</th></tr></thead>
+        <tbody>
+          <tr><td><code>plan</code></td><td class="yes">✔</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td></tr>
+          <tr><td><code>default</code></td><td class="yes">✔</td><td class="ask">ask</td><td class="ask">ask</td><td class="ask">ask</td></tr>
+          <tr><td><code>accept-edits</code></td><td class="yes">✔</td><td class="yes">✔</td><td class="ask">ask</td><td class="ask">ask</td></tr>
+          <tr><td><code>auto</code> (<code>--yes</code>)</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="ask">ask</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="commands">
+  <div class="wrap">
+    <h2>Commands</h2>
+    <p class="sub">The essentials. Run <code>tp --help</code> for everything.</p>
+    <div class="grid g2">
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>In your shell</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>tp</code></td><td>Start an interactive session</td></tr>
+            <tr><td><code>tp "task"</code></td><td>Run one task and exit</td></tr>
+            <tr><td><code>tp -c</code></td><td>Resume the last session</td></tr>
+            <tr><td><code>tp providers</code></td><td>Add a provider, set the default model</td></tr>
+            <tr><td><code>tp plan "task"</code></td><td>Read-only implementation plan</td></tr>
+            <tr><td><code>tp review</code></td><td>Review your changes</td></tr>
+            <tr><td><code>tp init</code></td><td>Create project config</td></tr>
+            <tr><td><code>tp doctor</code></td><td>Diagnose setup problems</td></tr>
+            <tr><td><code>tp session list</code></td><td>Saved sessions</td></tr>
+            <tr><td><code>tp audit</code></td><td>Log of every action taken</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>In a session</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>/plan task</code></td><td>Plan first, then say “go”</td></tr>
+            <tr><td><code>/diff</code></td><td>All changes this session</td></tr>
+            <tr><td><code>/undo</code></td><td>Revert the last turn</td></tr>
+            <tr><td><code>/model</code></td><td>Show or switch model</td></tr>
+            <tr><td><code>/mode</code></td><td>Change permission mode</td></tr>
+            <tr><td><code>/review</code></td><td>Review current changes</td></tr>
+            <tr><td><code>/status</code></td><td>Tokens, cost, context used</td></tr>
+            <tr><td><code>/remember note</code></td><td>Save a project preference</td></tr>
+            <tr><td><code>/compact</code></td><td>Free up context</td></tr>
+            <tr><td><code>Ctrl-C</code></td><td>Interrupt; next message continues</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <h2>Questions</h2>
+    <p class="sub">Short answers.</p>
+    <details><summary>What do I need?</summary><p>macOS 12+ (Intel or Apple Silicon) or Linux (x86_64 or arm64), plus an Anthropic or OpenAI API key. On Windows, use WSL for now. Git is recommended.</p></details>
+    <details><summary>Where is my API key stored?</summary><p>In the macOS Keychain (on Linux, the system keyring, or a private 0600 file). It never goes into a config file. An exported <code>ANTHROPIC_API_KEY</code> or <code>OPENAI_API_KEY</code> also works and takes priority.</p></details>
+    <details><summary>Does my code leave my machine?</summary><p>Only the files the agent reads are sent, and only to the model provider you configured. tp has no server and collects no telemetry.</p></details>
+    <details><summary>How do I update?</summary><p>Run the install command again. It replaces the binary and keeps your settings and sessions.</p></details>
+    <details><summary>How do I uninstall?</summary><p><code>curl -fsSL https://tp.0xabby.space/install.sh | sh -s -- --uninstall</code> removes the binary. Your settings and sessions are kept; the command prints how to delete them too.</p></details>
+    <details><summary>Can I install a specific version?</summary><p><code>curl -fsSL https://tp.0xabby.space/install.sh | TP_VERSION=v0.1.0 sh</code>. Use <code>TP_INSTALL_DIR</code> to change the install location.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span><span lang="ta">தீப்பொறி</span> Thee Pori — open source under the MIT License</span>
+    <span>
+      <a href="https://github.com/Abhinivesh2729/theepori">GitHub</a> ·
+      <a href="https://github.com/Abhinivesh2729/theepori/releases">Releases</a> ·
+      <a href="/install.sh">install.sh</a> ·
+      <button class="theme-btn" id="theme" type="button">Theme</button>
+    </span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var cmd = document.getElementById('cmd'), note = document.getElementById('note'), copy = document.getElementById('copy');
+  document.querySelectorAll('.tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(function (x) { x.setAttribute('aria-selected', 'false'); });
+      t.setAttribute('aria-selected', 'true');
+      cmd.textContent = t.dataset.cmd;
+      note.innerHTML = t.dataset.note;
+    });
+  });
+  copy.addEventListener('click', function () {
+    var text = cmd.textContent, done = function () {
+      copy.textContent = 'Copied'; copy.classList.add('done');
+      setTimeout(function () { copy.textContent = 'Copy'; copy.classList.remove('done'); }, 1600);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(done);
+    } else {
+      var r = document.createRange(); r.selectNodeContents(cmd);
+      var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      try { document.execCommand('copy'); done(); } catch (e) {}
+    }
+  });
+  var root = document.documentElement, btn = document.getElementById('theme');
+  try { var saved = localStorage.getItem('tp-theme'); if (saved) root.dataset.theme = saved; } catch (e) {}
+  btn.addEventListener('click', function () {
+    var dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+    try { localStorage.setItem('tp-theme', root.dataset.theme); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

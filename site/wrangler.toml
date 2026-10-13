@@ -1,0 +1,11 @@
+# Landing page + installer at https://tp.0xabby.space (static-assets Worker).
+# Deploy: make site-deploy   (copies ../install.sh into public/ first)
+name = "theepori-site"
+compatibility_date = "2026-10-01"
+
+[assets]
+directory = "./public"
+
+[[routes]]
+pattern = "tp.0xabby.space"
+custom_domain = true

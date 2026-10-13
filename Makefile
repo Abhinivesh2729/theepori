@@ -5,7 +5,7 @@ PKG     := github.com/Abhinivesh2729/theepori/internal/cli
 LDFLAGS := -s -w -X $(PKG).Version=$(VERSION) -X $(PKG).Commit=$(COMMIT) -X $(PKG).Date=$(DATE)
 PREFIX  ?= $(HOME)/.local
 
-.PHONY: build test vet install dist clean
+.PHONY: build test vet install dist clean site site-deploy snapshot
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o bin/tp ./cmd/tp
@@ -32,3 +32,14 @@ dist:
 
 clean:
 	rm -rf bin dist
+
+# Landing page + installer → https://tp.0xabby.space (Cloudflare Worker, static assets)
+site:
+	cp install.sh site/public/install.sh
+
+site-deploy: site
+	cd site && npx -y wrangler@4 deploy
+
+# Local dry run of the release (no publish)
+snapshot:
+	goreleaser release --snapshot --clean

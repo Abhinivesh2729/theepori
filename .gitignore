@@ -3,3 +3,7 @@ dist/
 *.test
 .DS_Store
 .env
+site/public/install.sh
+site/.wrangler/
+.env.*
+!.env.example
