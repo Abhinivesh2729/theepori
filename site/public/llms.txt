@@ -1,0 +1,24 @@
+# Thee Pori (tp)
+
+> Thee Pori (Tamil: தீப்பொறி, "spark") is a free, open-source (MIT) AI coding agent for the terminal on macOS and Linux. It reads a codebase, plans, edits files, runs tests and reviews changes, asking for approval before every edit or command. It is growing into a software factory: one agent that runs many projects end to end. It works with Anthropic Claude and OpenAI, and can use private offline models running on an Android phone through the Thinai app.
+
+Install: `curl -fsSL https://tp.0xabhi.space/install.sh | sh` (macOS Intel/Apple Silicon, Linux x86_64/arm64; Windows via WSL). Then `tp providers` to add an API key, and `tp` inside a project.
+
+## Available now (v0.1)
+- Coding loop: understand, plan, modify, test, review in any repository
+- Providers: Anthropic Claude (default Claude Opus 5.5) and OpenAI; keys stored in the OS keychain
+- Permission modes: plan (read-only), default (ask before edits and commands), accept-edits, auto; destructive commands (rm -rf, git push, deploys) always require approval
+- Sessions saved after every step and resumable (`tp -c`), `/undo`, `tp plan`, `tp review`, project instructions from AGENTS.md
+- Token usage and cost shown per turn; prompt caching; local audit log; no telemetry, no server
+
+## Coming next
+- Thinai and Ollama setup in `tp providers` (private, offline, no API key)
+- Software factory: multi-project workspace, project knowledge (PRD, architecture, tasks, runbooks), lifecycle operations (GitHub, Jira, CI, deploys)
+
+## Links
+- [Website](https://tp.0xabhi.space/)
+- [Source code on GitHub](https://github.com/Abhinivesh2729/theepori)
+- [Releases](https://github.com/Abhinivesh2729/theepori/releases)
+- [Thinai on Google Play](https://play.google.com/store/apps/details?id=in.atmega.thinai&hl=en_IN)
+- [Author on X](https://x.com/0xAbhi__)
+- [Author on Instagram](https://www.instagram.com/0xabhi/)

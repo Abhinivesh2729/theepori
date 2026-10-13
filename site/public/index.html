@@ -3,477 +3,422 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Thee Pori: build and run a software factory</title>
-<meta name="description" content="Thee Pori (தீப்பொறி) is a terminal agent for building and running a software factory: many projects, one agent. Use Claude, OpenAI, or a private model on your phone with Thinai.">
-<meta property="og:title" content="Thee Pori (தீப்பொறி): build and run a software factory from your terminal">
-<meta property="og:description" content="Not just a coding agent. One agent for all your projects, with Claude, OpenAI or Thinai running offline on your phone.">
+<title>Thee Pori (tp): Open-Source AI Coding Agent for the Terminal</title>
+<meta name="description" content="Thee Pori is a free, open-source AI coding agent for macOS and Linux. Build and run a software factory with Claude, OpenAI, or private offline models on your phone via Thinai.">
+<meta name="keywords" content="AI coding agent, open source coding agent, terminal coding agent, CLI coding assistant, software factory, Claude, OpenAI, offline LLM, Thinai, Thee Pori, tp">
+<meta name="author" content="Abhinivesh">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://tp.0xabhi.space/">
 <meta name="theme-color" content="#16110e">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Thee Pori">
+<meta property="og:url" content="https://tp.0xabhi.space/">
+<meta property="og:title" content="Thee Pori: run a software factory from your terminal">
+<meta property="og:description" content="Free, open-source AI coding agent. Plan, code, test and review across your projects with Claude, OpenAI, or a private model on your phone.">
+<meta property="og:image" content="https://tp.0xabhi.space/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Thee Pori flame logo with the Tamil name தீப்பொறி and the install command">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@0xAbhi__">
+<meta name="twitter:creator" content="@0xAbhi__">
+<meta name="twitter:title" content="Thee Pori: run a software factory from your terminal">
+<meta name="twitter:description" content="Free, open-source AI coding agent with Claude, OpenAI and private offline models via Thinai.">
+<meta name="twitter:image" content="https://tp.0xabhi.space/og.png">
+
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
-<meta property="og:image" content="https://tp.0xabhi.space/icon-512.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="alternate" type="text/plain" href="/llms.txt" title="LLM summary">
+
+<!-- Only the eight Tamil letters of the logo are downloaded. -->
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Tamil:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@800&text=%E0%AE%A4%E0%AF%80%E0%AE%AA%E0%AF%8D%E0%AE%AA%E0%AF%8A%E0%AE%B1%E0%AE%BF&display=swap">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://tp.0xabhi.space/#app",
+      "name": "Thee Pori",
+      "alternateName": ["tp", "தீப்பொறி", "Theepori"],
+      "description": "Free, open-source AI coding agent for the terminal that grows into a software factory: plan, code, test and review across projects with Claude, OpenAI, or private offline models via Thinai.",
+      "applicationCategory": "DeveloperApplication",
+      "applicationSubCategory": "AI coding agent",
+      "operatingSystem": "macOS, Linux",
+      "softwareVersion": "0.1.0",
+      "url": "https://tp.0xabhi.space/",
+      "downloadUrl": "https://github.com/Abhinivesh2729/theepori/releases/latest",
+      "installUrl": "https://tp.0xabhi.space/install.sh",
+      "image": "https://tp.0xabhi.space/og.png",
+      "license": "https://opensource.org/licenses/MIT",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "featureList": [
+        "Terminal AI coding agent: understand, plan, modify, test, review",
+        "Anthropic Claude and OpenAI model providers",
+        "Private offline models on an Android phone via Thinai",
+        "Approval before file edits and commands, with diffs",
+        "Resumable sessions, undo, plan mode and code review",
+        "API keys stored in the system keychain"
+      ],
+      "author": { "@id": "https://tp.0xabhi.space/#author" },
+      "sameAs": ["https://github.com/Abhinivesh2729/theepori"]
+    },
+    {
+      "@type": "SoftwareSourceCode",
+      "name": "Thee Pori source code",
+      "codeRepository": "https://github.com/Abhinivesh2729/theepori",
+      "programmingLanguage": "Go",
+      "license": "https://opensource.org/licenses/MIT",
+      "targetProduct": { "@id": "https://tp.0xabhi.space/#app" }
+    },
+    {
+      "@type": "Person",
+      "@id": "https://tp.0xabhi.space/#author",
+      "name": "Abhinivesh",
+      "sameAs": ["https://x.com/0xAbhi__", "https://www.instagram.com/0xabhi/", "https://github.com/Abhinivesh2729"]
+    },
+    {
+      "@type": "WebSite",
+      "name": "Thee Pori",
+      "url": "https://tp.0xabhi.space/",
+      "inLanguage": "en"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "What is Thee Pori?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Thee Pori (tp) is a free, open-source AI coding agent for the terminal on macOS and Linux. It reads your code, plans, edits, runs tests and asks before every change. It is growing into a software factory that manages many projects with one agent." } },
+        { "@type": "Question", "name": "Is Thee Pori free and open source?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Thee Pori is MIT licensed and free. You only pay your model provider (Anthropic or OpenAI), or nothing when you use a private model through Thinai." } },
+        { "@type": "Question", "name": "What is a software factory?",
+          "acceptedAnswer": { "@type": "Answer", "text": "One agent that runs many software projects end to end: their code, knowledge, releases and upkeep. The coding agent is available today; multi-project workspace, project knowledge and lifecycle operations are coming next." } },
+        { "@type": "Question", "name": "What is Thinai?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Thinai is an Android app that runs AI models offline on your phone and shares them over Wi-Fi. Thee Pori can use it as a model provider so private code never leaves your network." } },
+        { "@type": "Question", "name": "How do I install Thee Pori?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Run curl -fsSL https://tp.0xabhi.space/install.sh | sh on macOS or Linux, then run tp providers to add your Anthropic or OpenAI key." } }
+      ]
+    }
+  ]
+}
+</script>
+
 <style>
 :root {
-  --bg: #fffaf5; --bg2: #fff3e8; --card: #ffffff; --line: #f0dfcf;
-  --text: #1d1410; --muted: #6b5a4f; --code-bg: #1d1612; --code-text: #f6ede6;
-  --accent: #e35d00; --accent-2: #c2410c; --ok: #15803d;
+  --bg: #fffaf5; --bg2: #fff3e8; --card: #fff; --line: #f0dfcf;
+  --text: #1d1410; --muted: #6b5a4f; --code: #1d1612; --code-text: #f6ede6;
+  --accent: #e35d00; --ok: #15803d;
   --t1: #c98a00; --t2: #e07000; --t3: #e04e00; --t4: #cf2a1e;
   --shadow: 0 1px 2px rgba(60,30,10,.06), 0 8px 24px rgba(60,30,10,.06);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #14100d; --bg2: #1b1511; --card: #1f1814; --line: #33271f;
-    --text: #f6ede6; --muted: #b5a397; --code-bg: #0e0b09; --code-text: #f6ede6;
-    --accent: #ff8a1f; --accent-2: #ffb15c; --ok: #4ade80;
+    --text: #f6ede6; --muted: #b5a397; --code: #0e0b09; --code-text: #f6ede6;
+    --accent: #ff8a1f; --ok: #4ade80;
     --t1: #ffd60a; --t2: #ffb000; --t3: #ff7a00; --t4: #ff3b1f;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
   }
 }
 :root[data-theme="dark"] {
   --bg: #14100d; --bg2: #1b1511; --card: #1f1814; --line: #33271f;
-  --text: #f6ede6; --muted: #b5a397; --code-bg: #0e0b09; --code-text: #f6ede6;
-  --accent: #ff8a1f; --accent-2: #ffb15c; --ok: #4ade80;
+  --text: #f6ede6; --muted: #b5a397; --code: #0e0b09; --code-text: #f6ede6;
+  --accent: #ff8a1f; --ok: #4ade80;
   --t1: #ffd60a; --t2: #ffb000; --t3: #ff7a00; --t4: #ff3b1f;
   --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
 }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body {
-  margin: 0; background: var(--bg); color: var(--text);
-  font: 16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
-code, pre, .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; }
-.wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+code, pre, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.wrap { max-width: 1000px; margin: 0 auto; padding: 0 16px; }
 
-/* nav */
 nav { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
 nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
-.brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; color: var(--text); white-space: nowrap; letter-spacing: -.01em; }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; color: var(--text); white-space: nowrap; }
 .brand:hover { text-decoration: none; }
 .brand svg { width: 22px; height: 22px; }
 .links { display: flex; align-items: center; gap: 20px; font-size: 14px; font-weight: 500; white-space: nowrap; }
 .links a { color: var(--muted); }
 .links a:hover { color: var(--text); text-decoration: none; }
-@media (max-width: 860px) { .links .opt { display: none; } }
-@media (max-width: 420px) { .links .opt2 { display: none; } .links { gap: 14px; } }
+.links .cta { color: #fff; background: linear-gradient(135deg, #ff8a1f, #e8261c); padding: 6px 14px; border-radius: 999px; font-weight: 600; }
+@media (max-width: 760px) { .links .opt { display: none; } }
 
-/* hero */
-.hero { padding: 64px 0 40px; text-align: center; }
-.flame { width: 84px; height: 108px; margin: 0 auto 8px; display: block; filter: drop-shadow(0 8px 24px rgba(255,106,0,.35)); }
-.flame .flick { transform-origin: 50% 100%; animation: flick 2.6s ease-in-out infinite; }
-@keyframes flick { 0%,100% { transform: scale(1,1) skewX(0); } 40% { transform: scale(.97,1.03) skewX(-1.5deg); } 70% { transform: scale(1.02,.98) skewX(1deg); } }
-@media (prefers-reduced-motion: reduce) { .flame .flick { animation: none; } }
-.tamil { font-family: "Noto Sans Tamil", "Tamil Sangam MN", sans-serif; font-weight: 800;
-  font-size: clamp(44px, 9vw, 76px); line-height: 1.25; letter-spacing: .01em; margin: 0; }
-.tamil span:nth-child(1) { color: var(--t1); }
-.tamil span:nth-child(2) { color: var(--t2); }
-.tamil span:nth-child(3) { color: var(--t3); }
-.tamil span:nth-child(4) { color: var(--t4); }
-.name { font-size: 15px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 4px 0 18px; }
-.hero h1 { font-size: clamp(26px, 4.4vw, 40px); line-height: 1.2; margin: 0 auto 12px; max-width: 760px; letter-spacing: -.02em; }
-.hero .lede { font-size: 18px; color: var(--muted); max-width: 640px; margin: 0 auto 28px; }
+.hero { padding: 56px 0 36px; text-align: center; }
+.flame { width: 76px; height: 98px; display: block; margin: 0 auto 6px; filter: drop-shadow(0 8px 24px rgba(255,106,0,.35)); }
+.flame g { transform-origin: 50% 100%; animation: flick 2.6s ease-in-out infinite; }
+@keyframes flick { 40% { transform: scale(.97,1.03) skewX(-1.5deg); } 70% { transform: scale(1.02,.98) skewX(1deg); } }
+@media (prefers-reduced-motion: reduce) { .flame g { animation: none; } }
+.tamil { font-family: "Noto Sans Tamil", "Tamil Sangam MN", "Nirmala UI", sans-serif; font-weight: 800;
+  font-size: clamp(42px, 8.5vw, 72px); line-height: 1.25; margin: 0; }
+.tamil span:nth-child(1) { color: var(--t1); } .tamil span:nth-child(2) { color: var(--t2); }
+.tamil span:nth-child(3) { color: var(--t3); } .tamil span:nth-child(4) { color: var(--t4); }
+.eyebrow { font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 2px 0 14px; }
+h1 { font-size: clamp(28px, 4.6vw, 44px); line-height: 1.15; letter-spacing: -.02em; margin: 0 auto 12px; max-width: 760px; }
+.lede { font-size: 18px; color: var(--muted); max-width: 600px; margin: 0 auto 26px; }
 
-/* install */
-.install { max-width: 680px; margin: 0 auto; text-align: left; }
+.install { max-width: 640px; margin: 0 auto; text-align: left; }
 .tabs { display: flex; gap: 4px; margin-bottom: -1px; }
 .tab { border: 1px solid var(--line); border-bottom: none; background: var(--bg2); color: var(--muted);
-  padding: 8px 14px; font: 600 13px Inter, sans-serif; border-radius: 10px 10px 0 0; cursor: pointer; }
-.tab[aria-selected="true"] { background: var(--code-bg); color: var(--code-text); border-color: var(--code-bg); }
-.cmd { display: flex; align-items: center; gap: 12px; background: var(--code-bg); color: var(--code-text);
-  border-radius: 0 12px 12px 12px; padding: 16px 16px 16px 20px; box-shadow: var(--shadow); }
+  padding: 7px 14px; font: 600 13px system-ui, sans-serif; border-radius: 10px 10px 0 0; cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--code); color: var(--code-text); border-color: var(--code); }
+.cmd { display: flex; align-items: center; gap: 12px; background: var(--code); color: var(--code-text);
+  border-radius: 0 12px 12px 12px; padding: 14px 14px 14px 18px; box-shadow: var(--shadow); }
 .cmd code { flex: 1; font-size: 15px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
 .cmd code::before { content: "$ "; color: #ff8a1f; }
 .copy { flex: none; border: 1px solid #4a3a30; background: #2a211b; color: var(--code-text); border-radius: 8px;
-  padding: 8px 14px; font: 600 13px Inter, sans-serif; cursor: pointer; min-width: 78px; }
-.copy:hover { background: #3a2d25; }
-.copy.done { color: #4ade80; border-color: #2f6b45; }
+  padding: 7px 14px; font: 600 13px system-ui, sans-serif; cursor: pointer; min-width: 74px; }
+.copy.done { color: #4ade80; }
 .note { font-size: 13px; color: var(--muted); margin: 10px 2px 0; }
-.badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 22px; }
-.badge { font-size: 13px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--card); }
+.status { font-size: 14px; color: var(--muted); margin-top: 18px; }
 
-/* sections */
-section { padding: 56px 0; }
-section.alt { background: var(--bg2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-h2 { font-size: clamp(24px, 3.4vw, 32px); letter-spacing: -.02em; margin: 0 0 8px; }
-.sub { color: var(--muted); margin: 0 0 28px; max-width: 680px; }
-.grid { display: grid; gap: 16px; }
-.grid > *, .flow > * { min-width: 0; }
-.g3 { grid-template-columns: repeat(3, 1fr); }
-.g2 { grid-template-columns: repeat(2, 1fr); }
-@media (max-width: 860px) { .g3 { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 600px) { .g3, .g2 { grid-template-columns: 1fr; } }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; box-shadow: var(--shadow); }
-.card h3 { margin: 0 0 6px; font-size: 17px; }
-.card p { margin: 0; color: var(--muted); font-size: 15px; }
-.card code { font-size: 13px; background: var(--bg2); padding: 1px 6px; border-radius: 6px; color: var(--text); }
-.step-n { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
-  background: linear-gradient(135deg, #ffb000, #ff3b1f); color: #fff; font-weight: 800; font-size: 14px; margin-bottom: 10px; }
-.snippet { margin-top: 12px; background: var(--code-bg); color: var(--code-text); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; overflow-x: auto; white-space: nowrap; }
-
-/* workflow */
-.flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; counter-reset: f; }
-@media (max-width: 860px) { .flow { grid-template-columns: 1fr; } }
-.flow div { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; position: relative; }
-.flow b { display: block; font-size: 16px; margin-bottom: 4px; }
-.flow b::before { counter-increment: f; content: counter(f) " · "; color: var(--accent); }
-.flow span { color: var(--muted); font-size: 14px; }
-
-/* terminal demo */
-.term { background: var(--code-bg); color: var(--code-text); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
-.term .bar { display: flex; gap: 6px; padding: 12px 14px; border-bottom: 1px solid #2a211b; }
-.term .bar i { width: 11px; height: 11px; border-radius: 50%; background: #3a2d25; }
-.term pre { margin: 0; padding: 18px 20px; font-size: 13.5px; line-height: 1.65; overflow-x: auto; }
-.c-dim { color: #8f8077; } .c-ok { color: #4ade80; } .c-add { color: #4ade80; } .c-del { color: #f87171; }
-.c-y { color: #fbbf24; } .c-c { color: #67e8f9; } .c-o { color: #ff8a1f; } .c-b { font-weight: 600; }
-
-/* tables */
-.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--card); box-shadow: var(--shadow); }
-table { width: 100%; border-collapse: collapse; font-size: 15px; }
-th, td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); background: var(--bg2); }
-tr:last-child td { border-bottom: none; }
-td code { font-size: 13.5px; white-space: nowrap; }
-.yes { color: var(--ok); font-weight: 700; } .ask { color: var(--accent); font-weight: 700; } .no { color: var(--muted); }
-
-/* faq */
-details { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; }
-summary { cursor: pointer; font-weight: 600; }
-details p { color: var(--muted); margin: 10px 0 0; }
-
-footer { padding: 36px 0 48px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
-footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
-.nav-cta { color: #fff !important; background: linear-gradient(135deg, #ff8a1f, #e8261c); padding: 6px 14px; border-radius: 999px; font-weight: 600; }
-.nav-cta:hover { filter: brightness(1.08); }
-.contact { text-align: center; }
-.contact .sub { margin-left: auto; margin-right: auto; }
-.socials { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
-.social { display: inline-flex; align-items: center; gap: 12px; padding: 14px 22px; border-radius: 14px;
-  background: var(--card); border: 1px solid var(--line); color: var(--text); font-weight: 600; box-shadow: var(--shadow); min-width: 220px; }
-.social:hover { text-decoration: none; border-color: var(--accent); transform: translateY(-1px); }
-.social svg { width: 22px; height: 22px; flex: none; }
-.social span { display: flex; flex-direction: column; text-align: left; line-height: 1.3; }
-.social small { color: var(--muted); font-weight: 500; }
-.tag { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .02em; padding: 2px 10px; border-radius: 999px; margin-bottom: 10px; }
+.tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; margin: 0 6px 8px 0; }
 .tag.now { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); border: 1px solid color-mix(in srgb, var(--ok) 35%, transparent); }
 .tag.next { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
-.status-line { font-size: 14px; color: var(--muted); margin: -12px auto 26px; }
-.status-line .tag { margin: 0 4px 0 0; }
-.thinai { display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: center; }
-@media (max-width: 800px) { .thinai { grid-template-columns: 1fr; } }
-.ticks { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 8px; }
+
+section { padding: 52px 0; }
+.alt { background: var(--bg2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+h2 { font-size: clamp(24px, 3.4vw, 30px); letter-spacing: -.02em; margin: 0 0 6px; }
+.sub { color: var(--muted); margin: 0 0 24px; max-width: 640px; }
+.grid { display: grid; gap: 14px; }
+.grid > * { min-width: 0; }
+.g4 { grid-template-columns: repeat(4, 1fr); } .g3 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 900px) { .g4 { grid-template-columns: 1fr 1fr; } .g3 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .g4, .g3 { grid-template-columns: 1fr; } }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: var(--shadow); }
+.card h3 { margin: 0 0 4px; font-size: 16px; }
+.card p { margin: 0; color: var(--muted); font-size: 15px; }
+code.i { font-size: 13px; background: var(--bg2); padding: 1px 6px; border-radius: 6px; color: var(--text); }
+.n { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, #ffb000, #ff3b1f); color: #fff; font-weight: 800; font-size: 13px; margin-bottom: 8px; }
+.snip { margin-top: 10px; background: var(--code); color: var(--code-text); border-radius: 10px; padding: 9px 12px; font-size: 13.5px; overflow-x: auto; white-space: nowrap; }
+
+.split { display: grid; grid-template-columns: 1.25fr 1fr; gap: 36px; align-items: center; }
+@media (max-width: 800px) { .split { grid-template-columns: 1fr; } }
+.ticks { list-style: none; padding: 0; margin: 0 0 18px; display: grid; gap: 6px; }
 .ticks li::before { content: "✔"; color: var(--ok); font-weight: 700; margin-right: 10px; }
-.fine { font-size: 14px; color: var(--muted); margin: 0; }
-.fine code, .ticks code { font-size: 13px; background: var(--bg2); padding: 1px 6px; border-radius: 6px; }
-.phone { justify-self: center; width: 250px; border-radius: 32px; padding: 22px 18px; background: var(--code-bg); color: var(--code-text);
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 12px; font-weight: 600;
+  background: var(--card); border: 1px solid var(--line); color: var(--text); box-shadow: var(--shadow); }
+.btn:hover { text-decoration: none; border-color: var(--accent); }
+.btn svg { width: 20px; height: 20px; }
+.phone { justify-self: center; width: 240px; border-radius: 30px; padding: 20px 16px; background: var(--code); color: var(--code-text);
   border: 6px solid #2b211b; box-shadow: var(--shadow); display: grid; gap: 10px; font-size: 14px; }
-.phone-top { font-weight: 700; text-align: center; padding-bottom: 6px; border-bottom: 1px solid #2a211b; }
-.phone-row { display: flex; align-items: center; gap: 8px; }
-.phone-row.dim { color: #8f8077; }
-.dot { width: 9px; height: 9px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; }
-.phone-url { font-size: 12.5px; background: #1d1612; border-radius: 8px; padding: 8px 10px; color: #ffb15c; }
-.phone-link { text-align: center; color: #ff8a1f; font-size: 20px; }
-.phone-term { font-size: 12.5px; background: #000; border-radius: 10px; padding: 10px; line-height: 1.6; }
-.pillars .card h3 { margin-top: 2px; }
-.theme-btn { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 8px; padding: 4px 10px; cursor: pointer; font: inherit; font-size: 13px; }
+.phone b { text-align: center; padding-bottom: 6px; border-bottom: 1px solid #2a211b; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; margin-right: 8px; }
+.phone .url { font-size: 12.5px; background: #1d1612; border-radius: 8px; padding: 8px 10px; color: #ffb15c; }
+.phone .term { font-size: 12.5px; background: #000; border-radius: 10px; padding: 10px; line-height: 1.6; }
+
+.term { background: var(--code); color: var(--code-text); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+.term pre { margin: 0; padding: 18px 20px; font-size: 13.5px; line-height: 1.65; overflow-x: auto; }
+.d { color: #8f8077; } .g { color: #4ade80; } .r { color: #f87171; } .y { color: #fbbf24; } .c { color: #67e8f9; } .o { color: #ff8a1f; } .b { font-weight: 600; }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--card); box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+td { padding: 10px 16px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: none; }
+td code { white-space: nowrap; font-size: 13.5px; }
+
+details { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 13px 18px; margin-bottom: 10px; }
+summary { cursor: pointer; font-weight: 600; }
+details p { color: var(--muted); margin: 8px 0 0; }
+
+.socials { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+footer { padding: 32px 0 44px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
+.theme-btn { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 8px; padding: 3px 10px; cursor: pointer; font: inherit; font-size: 13px; }
+.center { text-align: center; } .center .sub { margin-left: auto; margin-right: auto; }
 </style>
 </head>
 <body>
 
-<nav>
-  <div class="wrap">
-    <a class="brand" href="#top" aria-label="Thee Pori home">
-      <svg viewBox="0 0 64 80" aria-hidden="true"><use href="#flame-shape"/></svg> Thee Pori
-    </a>
-    <div class="links">
-      <a href="#install">Install</a>
-      <a class="opt2" href="#start">Get started</a>
-      <a class="opt" href="#factory">Factory</a>
-      <a class="opt" href="#thinai">Thinai</a>
-      <a class="opt" href="https://github.com/Abhinivesh2729/theepori">GitHub</a>
-      <a class="nav-cta" href="#contact">Contact</a>
-    </div>
-  </div>
-</nav>
-
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
-    <linearGradient id="fg" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0" stop-color="#ffb000"/>
-      <stop offset=".5" stop-color="#ff6a00"/>
-      <stop offset="1" stop-color="#e8261c"/>
-    </linearGradient>
-    <linearGradient id="core" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0" stop-color="#fff3b0"/>
-      <stop offset="1" stop-color="#ffd60a"/>
-    </linearGradient>
-    <symbol id="i-x" viewBox="0 0 24 24"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.8-6.3L6.4 22H3.3l7.3-8.3L1 2h6.3l4.4 5.8L18.9 2Zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3Z"/></symbol>
-    <symbol id="i-ig" viewBox="0 0 24 24"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.6" cy="6.4" r="1.3" fill="currentColor"/></symbol>
+    <linearGradient id="fg" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ffb000"/><stop offset=".5" stop-color="#ff6a00"/><stop offset="1" stop-color="#e8261c"/></linearGradient>
+    <linearGradient id="core" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fff3b0"/><stop offset="1" stop-color="#ffd60a"/></linearGradient>
     <g id="flame-shape">
       <path fill="url(#fg)" d="M34 2c4 16 20 23 20 45a22 22 0 0 1-44 0c0-11 5-18 11-23 0 8 3 12 7 14-3-14 1-25 6-36z"/>
       <path fill="url(#core)" d="M32 40c3 7 10 10 10 19a10 10 0 0 1-20 0c0-5 3-8 5-10 0 4 2 6 4 6-1-6 0-10 1-15z"/>
     </g>
+    <symbol id="i-x" viewBox="0 0 24 24"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.8-6.3L6.4 22H3.3l7.3-8.3L1 2h6.3l4.4 5.8L18.9 2Zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3Z"/></symbol>
+    <symbol id="i-ig" viewBox="0 0 24 24"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.6" cy="6.4" r="1.3" fill="currentColor"/></symbol>
+    <symbol id="i-gh" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6A11.5 11.5 0 0 0 12 .5Z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M4.6 2.3c-.4.3-.6.8-.6 1.4v16.6c0 .6.2 1.1.6 1.4l9.3-9.7-9.3-9.7Zm10.7 8.2 2.6-2.7L6.8 1.6l8.5 8.9Zm0 3-8.5 8.9 11.1-6.2-2.6-2.7Zm4.1-4.8-2.9 3.3 2.9 3.3 1.7-1c.9-.5.9-1.9 0-2.4l-1.7-1.2Z"/></symbol>
   </defs>
 </svg>
 
-<header class="hero" id="top">
+<nav aria-label="Main">
   <div class="wrap">
-    <svg class="flame" viewBox="0 0 64 80" aria-hidden="true"><g class="flick"><use href="#flame-shape"/></g></svg>
-    <p class="tamil" lang="ta" aria-label="Thee Pori"><span>தீ</span><span>ப்</span><span>பொ</span><span>றி</span></p>
-    <p class="name">Thee Pori · tp</p>
-    <h1>Don't just build a project. Run a software factory.</h1>
-    <p class="lede">Other coding agents help you build one project. Thee Pori is growing into one agent that knows all your projects and builds, ships and maintains them, from your terminal. Use Claude or OpenAI, or keep everything private with a model running offline on your phone.</p>
-    <p class="status-line"><span class="tag now">Available now</span> the coding agent at the core &nbsp;·&nbsp; <span class="tag next">Coming next</span> the factory, built in the open</p>
+    <a class="brand" href="/" aria-label="Thee Pori home"><svg viewBox="0 0 64 80" aria-hidden="true"><use href="#flame-shape"/></svg>Thee Pori</a>
+    <div class="links">
+      <a href="#install">Install</a>
+      <a class="opt" href="#factory">Factory</a>
+      <a class="opt" href="#thinai">Thinai</a>
+      <a class="opt" href="https://github.com/Abhinivesh2729/theepori">GitHub</a>
+      <a class="cta" href="#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="wrap">
+    <svg class="flame" viewBox="0 0 64 80" role="img" aria-label="Thee Pori flame logo"><g><use href="#flame-shape"/></g></svg>
+    <p class="tamil" lang="ta" aria-label="Thee Pori in Tamil"><span>தீ</span><span>ப்</span><span>பொ</span><span>றி</span></p>
+    <p class="eyebrow">Open-source AI coding agent</p>
+    <h1>Run a software factory from your terminal</h1>
+    <p class="lede">Plan, code, test and review across your projects with Claude, OpenAI, or a private model on your phone.</p>
 
     <div class="install" id="install">
-      <div class="tabs" role="tablist">
-        <button class="tab" role="tab" aria-selected="true" data-cmd="curl -fsSL https://tp.0xabhi.space/install.sh | sh" data-note="macOS (Intel &amp; Apple Silicon) and Linux (x86_64 &amp; arm64). Installs to ~/.local/bin, no sudo needed.">macOS / Linux</button>
-        <button class="tab" role="tab" aria-selected="false" data-cmd="wsl --install" data-note="Native Windows support is coming. For now: run this in PowerShell, restart, open Ubuntu, then run the macOS / Linux command inside it.">Windows</button>
+      <div class="tabs" role="tablist" aria-label="Operating system">
+        <button class="tab" role="tab" aria-selected="true" data-cmd="curl -fsSL https://tp.0xabhi.space/install.sh | sh" data-note="macOS (Intel and Apple Silicon) and Linux. No sudo needed.">macOS / Linux</button>
+        <button class="tab" role="tab" aria-selected="false" data-cmd="wsl --install" data-note="Native Windows is coming. Install WSL, open Ubuntu, then run the macOS / Linux command.">Windows</button>
       </div>
-      <div class="cmd">
-        <code id="cmd">curl -fsSL https://tp.0xabhi.space/install.sh | sh</code>
-        <button class="copy" id="copy" type="button">Copy</button>
-      </div>
-      <p class="note" id="note">macOS (Intel &amp; Apple Silicon) and Linux (x86_64 &amp; arm64). Installs to ~/.local/bin, no sudo needed.</p>
+      <div class="cmd"><code id="cmd">curl -fsSL https://tp.0xabhi.space/install.sh | sh</code><button class="copy" id="copy" type="button">Copy</button></div>
+      <p class="note" id="note">macOS (Intel and Apple Silicon) and Linux. No sudo needed.</p>
     </div>
-
-    <div class="badges">
-      <span class="badge">Software factory</span>
-      <span class="badge">Thinai: offline on your phone</span>
-      <span class="badge">Claude &amp; OpenAI</span>
-      <span class="badge">Open source · MIT</span>
-    </div>
+    <p class="status"><span class="tag now">Available now</span>coding agent &nbsp; <span class="tag next">Coming next</span>software factory</p>
   </div>
 </header>
 
-<section class="alt" id="factory">
+<section class="alt" id="factory" aria-labelledby="factory-h">
   <div class="wrap">
-    <h2>Not another coding agent</h2>
-    <p class="sub">A coding agent works inside one repository. A software factory is everything around it: many products, their knowledge, their releases and their upkeep. Thee Pori is being built to run all of it with one agent.</p>
-    <div class="grid g2 pillars">
-      <div class="card"><span class="tag now">Available now</span><h3>The coding loop</h3><p>Understand, plan, modify, test and review in any repository, with every change shown before it lands. This is the engine the factory runs on.</p></div>
-      <div class="card"><span class="tag next">Coming next</span><h3>Multi-project workspace</h3><p>Register all your projects once. See status, open work, sessions and spend across every project from one place, and move between them without losing context.</p></div>
-      <div class="card"><span class="tag next">Coming next</span><h3>Project knowledge</h3><p>Each project keeps its PRD, architecture, decisions, tasks and runbook. The agent reads them before it works and updates them after, so nothing lives only in someone's head.</p></div>
-      <div class="card"><span class="tag next">Coming next</span><h3>Lifecycle operations</h3><p>Branches and pull requests on GitHub, tickets in Jira, CI and deploys. Building, shipping and maintaining from the same agent, with approval required for anything that touches production.</p></div>
+    <h2 id="factory-h">More than a coding agent</h2>
+    <p class="sub">Coding agents work inside one repo. Thee Pori is built to run all of your projects.</p>
+    <div class="grid g4">
+      <article class="card"><span class="tag now">Now</span><h3>Coding loop</h3><p>Understand, plan, edit, test and review any repo.</p></article>
+      <article class="card"><span class="tag next">Next</span><h3>All projects, one view</h3><p>Status, open work and spend across every project.</p></article>
+      <article class="card"><span class="tag next">Next</span><h3>Project knowledge</h3><p>PRD, architecture, tasks and runbooks kept current.</p></article>
+      <article class="card"><span class="tag next">Next</span><h3>Ship and maintain</h3><p>GitHub, Jira, CI and deploys, with approval for production.</p></article>
     </div>
   </div>
 </section>
 
-<section id="thinai">
-  <div class="wrap thinai">
+<section id="thinai" aria-labelledby="thinai-h">
+  <div class="wrap split">
     <div>
       <span class="tag next">Coming next</span>
-      <h2>Your phone is a private model server</h2>
-      <p class="sub">Connect <a href="https://play.google.com/store/apps/details?id=in.atmega.thinai" target="_blank" rel="noopener">Thinai</a>, the Android app that runs AI models offline, and Thee Pori uses it like any other model provider. Your code never leaves your Wi-Fi.</p>
+      <h2 id="thinai-h">Private models on your phone</h2>
+      <p class="sub">Thinai runs AI models offline on Android. Thee Pori uses it like any provider, so your code never leaves your Wi-Fi.</p>
       <ul class="ticks">
-        <li><b>Private:</b> prompts and code stay on your own network.</li>
-        <li><b>Free to run:</b> no API key and no per-token bill.</li>
-        <li><b>Works offline:</b> on a plane, behind a firewall, anywhere.</li>
-        <li><b>Zero setup:</b> tp finds the phone on your Wi-Fi by itself.</li>
+        <li>Private: nothing goes to the cloud</li>
+        <li>Free: no API key, no token bill</li>
+        <li>Offline: works anywhere, found automatically</li>
       </ul>
-      <p class="fine">Best for focused tasks on private code. Switch to Claude or OpenAI with <code>/model</code> for heavy, multi-step work. The Thinai connection is already in tp; one-step setup in <code>tp providers</code> is next.</p>
+      <a class="btn" href="https://play.google.com/store/apps/details?id=in.atmega.thinai&amp;hl=en_IN" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-play"/></svg>Get Thinai on Google Play</a>
     </div>
     <div class="phone" aria-hidden="true">
-      <div class="phone-top">Thinai · Server</div>
-      <div class="phone-row"><span class="dot"></span> Running on Wi-Fi</div>
-      <div class="phone-url mono">http://192.168.1.36:11434</div>
-      <div class="phone-row dim">Model: loaded on device</div>
-      <div class="phone-link">↔</div>
-      <div class="phone-term mono"><span class="c-o">tp</span> providers<br><span class="c-ok">✔</span> found Thinai on your Wi-Fi</div>
+      <b>Thinai · Server</b>
+      <div><span class="dot"></span>Running on Wi-Fi</div>
+      <div class="url mono">http://192.168.1.36:11434</div>
+      <div class="term mono"><span class="o">tp</span> providers<br><span class="g">✔</span> found Thinai on your Wi-Fi</div>
     </div>
   </div>
 </section>
 
-<section class="alt" id="start">
+<section class="alt" id="start" aria-labelledby="start-h">
   <div class="wrap">
-    <h2>Up and running in 3 steps</h2>
-    <p class="sub">No config files to write. No environment variables to set.</p>
+    <h2 id="start-h">Start in three steps</h2>
+    <p class="sub">No config files, no environment variables.</p>
     <div class="grid g3">
-      <div class="card">
-        <div class="step-n">1</div>
-        <h3>Install</h3>
-        <p>Paste the command above into your terminal. It verifies the download's checksum before installing.</p>
-        <div class="snippet mono">curl -fsSL https://tp.0xabhi.space/install.sh | sh</div>
-      </div>
-      <div class="card">
-        <div class="step-n">2</div>
-        <h3>Add a model provider</h3>
-        <p>Pick Anthropic or OpenAI with the arrow keys and paste your API key. tp checks it, stores it in your system keychain and lets you choose a default model.</p>
-        <div class="snippet mono">tp providers</div>
-      </div>
-      <div class="card">
-        <div class="step-n">3</div>
-        <h3>Start coding</h3>
-        <p>Open any project and describe what you want. Or run a one-off task straight from your shell.</p>
-        <div class="snippet mono">cd my-app &amp;&amp; tp</div>
-      </div>
+      <div class="card"><span class="n">1</span><h3>Install</h3><p>Checksum-verified, one command.</p><div class="snip mono">curl -fsSL https://tp.0xabhi.space/install.sh | sh</div></div>
+      <div class="card"><span class="n">2</span><h3>Add a model</h3><p>Pick a provider, paste your key.</p><div class="snip mono">tp providers</div></div>
+      <div class="card"><span class="n">3</span><h3>Build</h3><p>Open a project and describe the task.</p><div class="snip mono">cd my-app &amp;&amp; tp</div></div>
     </div>
   </div>
 </section>
 
-<section>
+<section aria-labelledby="demo-h">
   <div class="wrap">
-    <h2>How it works</h2>
-    <p class="sub">Every task follows the same reliable loop.</p>
-    <div class="flow">
-      <div><b>Understand</b><span>Explores the repo, reads the code you'll touch and your <code>AGENTS.md</code>.</span></div>
-      <div><b>Plan</b><span>Publishes a checklist for anything bigger than a one-liner.</span></div>
-      <div><b>Modify</b><span>Makes focused edits. You see the diff and approve it.</span></div>
-      <div><b>Test</b><span>Runs your test suite, reads failures, fixes them.</span></div>
-      <div><b>Review</b><span>Summarises changes, test results and what's left.</span></div>
-    </div>
-    <div class="term" style="margin-top:24px" aria-label="Example tp session">
-      <div class="bar"><i></i><i></i><i></i></div>
-<pre><span class="c-b">›</span> the discount in cart.go is wrong, fix it
-<span class="c-c">●</span> <span class="c-b">read_file</span> cart.go               <span class="c-dim">⎿ 20 lines</span>
-<span class="c-dim">The loop skips the first item and the check uses &gt; instead of &gt;=.</span>
-<span class="c-y">●</span> <span class="c-b">edit_file</span> edit cart.go (+3 -3)
-<span class="c-y">╭─ edit_file · write</span>
-<span class="c-y">│</span> <span class="c-del">-	for i := 1; i &lt; len(items); i++ {</span>
-<span class="c-y">│</span> <span class="c-add">+	for _, it := range items {</span>
-<span class="c-y">│</span> <span class="c-del">-	if sub &gt; 10000 {</span>
-<span class="c-y">│</span> <span class="c-add">+	if sub &gt;= 10000 {</span>
-<span class="c-y">╰─</span> Allow? <span class="c-b">[y]</span> yes · <span class="c-b">[a]</span> always · <span class="c-b">[n]</span> no, or type feedback: <span class="c-o">y</span>
-<span class="c-y">●</span> <span class="c-b">run_tests</span> go test ./...          <span class="c-ok">⎿ passed · 0.7s</span>
-
-Fixed both bugs in Total; tests pass.
-<span class="c-dim">4.4k in (+11k cached) · 752 out · ~$0.039</span></pre>
+    <h2 id="demo-h">You approve every change</h2>
+    <p class="sub">Understand, plan, modify, test, review. Diffs before edits, tests after.</p>
+    <div class="term" role="img" aria-label="Example session: tp reads a file, proposes a diff, the user approves, tests pass">
+<pre><span class="b">›</span> the discount in cart.go is wrong, fix it
+<span class="c">●</span> <span class="b">read_file</span> cart.go                <span class="d">⎿ 20 lines</span>
+<span class="y">●</span> <span class="b">edit_file</span> cart.go (+3 -3)
+<span class="y">│</span> <span class="r">-	if sub &gt; 10000 {</span>
+<span class="y">│</span> <span class="g">+	if sub &gt;= 10000 {</span>
+<span class="y">╰─</span> Allow? <span class="b">[y]</span> yes · <span class="b">[a]</span> always · <span class="b">[n]</span> no: <span class="o">y</span>
+<span class="y">●</span> <span class="b">run_tests</span> go test ./...           <span class="g">⎿ passed · 0.7s</span>
+<span class="d">4.4k in (+11k cached) · 752 out · ~$0.039</span></pre>
     </div>
   </div>
 </section>
 
-<section class="alt" id="features">
+<section class="alt" id="features" aria-labelledby="features-h">
   <div class="wrap">
-    <h2>Available today</h2>
-    <p class="sub">Everything below ships in v0.1 and works in any repository right now.</p>
+    <h2 id="features-h">Built in</h2>
+    <p class="sub">Everything here ships today.</p>
     <div class="grid g3">
-      <div class="card"><h3>Your choice of model</h3><p>Anthropic Claude (default: Claude Opus 5.5) and OpenAI today; Thinai and Ollama next. Switch any time with <code>/model</code>.</p></div>
-      <div class="card"><h3>You stay in control</h3><p>Reading is free. File edits and commands ask first, with a diff. Destructive commands like <code>rm -rf</code>, <code>git push</code> or deploys always need a typed “yes”.</p></div>
-      <div class="card"><h3>Sessions that survive</h3><p>Saved after every step. Ctrl-C or a crash loses nothing: <code>tp -c</code> resumes. <code>/undo</code> reverts the last turn's file changes.</p></div>
-      <div class="card"><h3>Knows your project</h3><p>Follows <code>AGENTS.md</code> / <code>CLAUDE.md</code>, respects <code>.gitignore</code>, detects your test command, and remembers decisions with <code>/remember</code>.</p></div>
-      <div class="card"><h3>Secrets stay secret</h3><p>Keys live in your OS keychain, are redacted from logs and never passed to commands the agent runs. <code>.env</code> files and private keys are off-limits.</p></div>
-      <div class="card"><h3>Cost you can see</h3><p>Token usage and estimated cost after every turn. Prompt caching cuts repeat input cost; long sessions are compacted automatically.</p></div>
-      <div class="card"><h3>Plan before you build</h3><p><code>tp plan "…"</code> investigates read-only and proposes files, steps, tests and risks. Say “go” to implement.</p></div>
-      <div class="card"><h3>Code review built in</h3><p><code>tp review</code> reviews your uncommitted changes, staged work or a whole branch (<code>--base main</code>), most severe first.</p></div>
-      <div class="card"><h3>Local-first</h3><p>A single Go binary. No account, no server, no telemetry. Your code goes only to the model provider you choose.</p></div>
+      <article class="card"><h3>Claude and OpenAI</h3><p>Claude Opus 5.5 by default. Switch with <code class="i">/model</code>.</p></article>
+      <article class="card"><h3>Safe by default</h3><p>Edits and commands ask first. <code class="i">rm -rf</code> and deploys always do.</p></article>
+      <article class="card"><h3>Never lose work</h3><p>Sessions resume with <code class="i">tp -c</code>. <code class="i">/undo</code> reverts a turn.</p></article>
+      <article class="card"><h3>Plan and review</h3><p><code class="i">tp plan</code> and <code class="i">tp review</code> before you commit.</p></article>
+      <article class="card"><h3>Knows your repo</h3><p>Follows <code class="i">AGENTS.md</code> and finds your tests.</p></article>
+      <article class="card"><h3>Keys stay private</h3><p>Stored in your keychain, never in logs or commands.</p></article>
     </div>
   </div>
 </section>
 
-<section id="modes">
+<section id="commands" aria-labelledby="commands-h">
   <div class="wrap">
-    <h2>Permission modes</h2>
-    <p class="sub">Pick how much the agent may do on its own. Switch with <code>/mode</code> or <code>--mode</code>.</p>
+    <h2 id="commands-h">Commands</h2>
+    <p class="sub">The essentials. <code class="i">tp --help</code> lists the rest.</p>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Mode</th><th>Read files</th><th>Edit files</th><th>Run commands</th><th>Destructive</th></tr></thead>
-        <tbody>
-          <tr><td><code>plan</code></td><td class="yes">✔</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td></tr>
-          <tr><td><code>default</code></td><td class="yes">✔</td><td class="ask">ask</td><td class="ask">ask</td><td class="ask">ask</td></tr>
-          <tr><td><code>accept-edits</code></td><td class="yes">✔</td><td class="yes">✔</td><td class="ask">ask</td><td class="ask">ask</td></tr>
-          <tr><td><code>auto</code> (<code>--yes</code>)</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td><td class="ask">ask</td></tr>
-        </tbody>
+        <tr><td><code>tp</code></td><td>Interactive session</td></tr>
+        <tr><td><code>tp "task"</code></td><td>Run one task and exit</td></tr>
+        <tr><td><code>tp providers</code></td><td>Add a model provider</td></tr>
+        <tr><td><code>tp plan "task"</code></td><td>Read-only plan</td></tr>
+        <tr><td><code>tp review</code></td><td>Review your changes</td></tr>
+        <tr><td><code>tp -c</code></td><td>Resume the last session</td></tr>
+        <tr><td><code>/diff</code> · <code>/undo</code> · <code>/mode</code></td><td>Inside a session</td></tr>
       </table>
     </div>
   </div>
 </section>
 
-<section class="alt" id="commands">
+<section class="alt" id="faq" aria-labelledby="faq-h">
   <div class="wrap">
-    <h2>Commands</h2>
-    <p class="sub">The essentials. Run <code>tp --help</code> for everything.</p>
-    <div class="grid g2">
-      <div class="tablewrap">
-        <table>
-          <thead><tr><th>In your shell</th><th>What it does</th></tr></thead>
-          <tbody>
-            <tr><td><code>tp</code></td><td>Start an interactive session</td></tr>
-            <tr><td><code>tp "task"</code></td><td>Run one task and exit</td></tr>
-            <tr><td><code>tp -c</code></td><td>Resume the last session</td></tr>
-            <tr><td><code>tp providers</code></td><td>Add a provider, set the default model</td></tr>
-            <tr><td><code>tp plan "task"</code></td><td>Read-only implementation plan</td></tr>
-            <tr><td><code>tp review</code></td><td>Review your changes</td></tr>
-            <tr><td><code>tp init</code></td><td>Create project config</td></tr>
-            <tr><td><code>tp doctor</code></td><td>Diagnose setup problems</td></tr>
-            <tr><td><code>tp session list</code></td><td>Saved sessions</td></tr>
-            <tr><td><code>tp audit</code></td><td>Log of every action taken</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="tablewrap">
-        <table>
-          <thead><tr><th>In a session</th><th>What it does</th></tr></thead>
-          <tbody>
-            <tr><td><code>/plan task</code></td><td>Plan first, then say “go”</td></tr>
-            <tr><td><code>/diff</code></td><td>All changes this session</td></tr>
-            <tr><td><code>/undo</code></td><td>Revert the last turn</td></tr>
-            <tr><td><code>/model</code></td><td>Show or switch model</td></tr>
-            <tr><td><code>/mode</code></td><td>Change permission mode</td></tr>
-            <tr><td><code>/review</code></td><td>Review current changes</td></tr>
-            <tr><td><code>/status</code></td><td>Tokens, cost, context used</td></tr>
-            <tr><td><code>/remember note</code></td><td>Save a project preference</td></tr>
-            <tr><td><code>/compact</code></td><td>Free up context</td></tr>
-            <tr><td><code>Ctrl-C</code></td><td>Interrupt; next message continues</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <h2 id="faq-h">FAQ</h2>
+    <details><summary>What is Thee Pori?</summary><p>A free, open-source AI coding agent for the terminal on macOS and Linux, growing into a software factory that runs many projects with one agent. "Thee Pori" (தீப்பொறி) means "spark" in Tamil.</p></details>
+    <details><summary>Is it free and open source?</summary><p>Yes, MIT licensed. You pay only your model provider, or nothing with Thinai.</p></details>
+    <details><summary>What is a software factory?</summary><p>One agent that runs many projects end to end: code, knowledge, releases and upkeep. The coding agent ships today; the rest is coming next.</p></details>
+    <details><summary>What is Thinai?</summary><p>An Android app that runs AI models offline and shares them over Wi-Fi. Thee Pori can use it so private code stays on your network.</p></details>
+    <details><summary>How do I update or uninstall?</summary><p>Run the install command again to update. To remove: <code class="i">curl -fsSL https://tp.0xabhi.space/install.sh | sh -s -- --uninstall</code></p></details>
   </div>
 </section>
 
-<section class="alt" id="roadmap">
+<section id="contact" class="center" aria-labelledby="contact-h">
   <div class="wrap">
-    <h2>Roadmap</h2>
-    <p class="sub">Built in the open. Follow along on GitHub, X or Instagram.</p>
-    <div class="grid g3">
-      <div class="card"><span class="tag now">v0.1 · now</span><h3>The coding agent</h3><p>Coding loop, Claude and OpenAI, permission modes, sessions and undo, plan and review, one-line install.</p></div>
-      <div class="card"><span class="tag next">Next</span><h3>Local and private</h3><p>Thinai and Ollama in <code>tp providers</code>: pick your phone or local server with the arrow keys, no key needed.</p></div>
-      <div class="card"><span class="tag next">Then</span><h3>The factory</h3><p>Multi-project workspace, project knowledge, and lifecycle operations with GitHub, Jira, CI and deploys.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="faq">
-  <div class="wrap">
-    <h2>Questions</h2>
-    <p class="sub">Short answers.</p>
-    <details><summary>What is a software factory?</summary><p>Running several software products the way a factory runs production lines: one operator that knows every project's goals, code, open work and releases, and moves each forward. Thee Pori's coding agent is available today; the multi-project workspace, project knowledge and lifecycle operations are coming next.</p></details>
-    <details><summary>What is Thinai?</summary><p>An Android app that runs AI models offline on your phone and shares them over your Wi-Fi. Thee Pori can use it as a model provider, so private code never leaves your network and there is no API bill.</p></details>
-    <details><summary>What do I need?</summary><p>macOS 12+ (Intel or Apple Silicon) or Linux (x86_64 or arm64), plus an Anthropic or OpenAI API key. On Windows, use WSL for now. Git is recommended.</p></details>
-    <details><summary>Where is my API key stored?</summary><p>In the macOS Keychain (on Linux, the system keyring, or a private 0600 file). It never goes into a config file. An exported <code>ANTHROPIC_API_KEY</code> or <code>OPENAI_API_KEY</code> also works and takes priority.</p></details>
-    <details><summary>Does my code leave my machine?</summary><p>Only the files the agent reads are sent, and only to the model provider you configured. tp has no server and collects no telemetry.</p></details>
-    <details><summary>How do I update?</summary><p>Run the install command again. It replaces the binary and keeps your settings and sessions.</p></details>
-    <details><summary>How do I uninstall?</summary><p><code>curl -fsSL https://tp.0xabhi.space/install.sh | sh -s -- --uninstall</code> removes the binary. Your settings and sessions are kept; the command prints how to delete them too.</p></details>
-    <details><summary>Can I install a specific version?</summary><p><code>curl -fsSL https://tp.0xabhi.space/install.sh | TP_VERSION=v0.1.0 sh</code>. Use <code>TP_INSTALL_DIR</code> to change the install location.</p></details>
-  </div>
-</section>
-
-<section class="alt" id="contact">
-  <div class="wrap contact">
-    <h2>Say hello</h2>
-    <p class="sub">Questions, ideas or bugs? Reach out directly.</p>
+    <h2 id="contact-h">Say hello</h2>
+    <p class="sub">Questions, ideas or bugs? Reach out.</p>
     <div class="socials">
-      <a class="social" href="https://x.com/0xAbhi__" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-x"/></svg><span>Follow on X <small>@0xAbhi__</small></span></a>
-      <a class="social" href="https://www.instagram.com/0xabhi/" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-ig"/></svg><span>Instagram <small>@0xabhi</small></span></a>
+      <a class="btn" href="https://x.com/0xAbhi__" target="_blank" rel="noopener me"><svg aria-hidden="true"><use href="#i-x"/></svg>@0xAbhi__</a>
+      <a class="btn" href="https://www.instagram.com/0xabhi/" target="_blank" rel="noopener me"><svg aria-hidden="true"><use href="#i-ig"/></svg>@0xabhi</a>
+      <a class="btn" href="https://github.com/Abhinivesh2729/theepori" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-gh"/></svg>Star on GitHub</a>
     </div>
   </div>
 </section>
+</main>
 
 <footer>
   <div class="wrap">
-    <span><span lang="ta">தீப்பொறி</span> Thee Pori. Open source under the MIT License.</span>
+    <span><span lang="ta">தீப்பொறி</span> Thee Pori. MIT License.</span>
     <span>
       <a href="https://github.com/Abhinivesh2729/theepori">GitHub</a> ·
-      <a href="https://x.com/0xAbhi__" target="_blank" rel="noopener">X</a> ·
-      <a href="https://www.instagram.com/0xabhi/" target="_blank" rel="noopener">Instagram</a> ·
-      <a href="/install.sh">install.sh</a> ·
+      <a href="https://github.com/Abhinivesh2729/theepori/releases">Releases</a> ·
+      <a href="https://play.google.com/store/apps/details?id=in.atmega.thinai&amp;hl=en_IN">Thinai</a> ·
+      <a href="/llms.txt">llms.txt</a> ·
       <button class="theme-btn" id="theme" type="button">Theme</button>
     </span>
   </div>
@@ -485,27 +430,19 @@ Fixed both bugs in Total; tests pass.
   document.querySelectorAll('.tab').forEach(function (t) {
     t.addEventListener('click', function () {
       document.querySelectorAll('.tab').forEach(function (x) { x.setAttribute('aria-selected', 'false'); });
-      t.setAttribute('aria-selected', 'true');
-      cmd.textContent = t.dataset.cmd;
-      note.innerHTML = t.dataset.note;
+      t.setAttribute('aria-selected', 'true'); cmd.textContent = t.dataset.cmd; note.textContent = t.dataset.note;
     });
   });
   copy.addEventListener('click', function () {
-    var text = cmd.textContent, done = function () {
-      copy.textContent = 'Copied'; copy.classList.add('done');
-      setTimeout(function () { copy.textContent = 'Copy'; copy.classList.remove('done'); }, 1600);
-    };
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text).then(done);
-    } else {
-      var r = document.createRange(); r.selectNodeContents(cmd);
-      var s = getSelection(); s.removeAllRanges(); s.addRange(r);
-      try { document.execCommand('copy'); done(); } catch (e) {}
-    }
+    var done = function () { copy.textContent = 'Copied'; copy.classList.add('done');
+      setTimeout(function () { copy.textContent = 'Copy'; copy.classList.remove('done'); }, 1600); };
+    if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(cmd.textContent).then(done); }
+    else { var r = document.createRange(); r.selectNodeContents(cmd); var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      try { document.execCommand('copy'); done(); } catch (e) {} }
   });
-  var root = document.documentElement, btn = document.getElementById('theme');
-  try { var saved = localStorage.getItem('tp-theme'); if (saved) root.dataset.theme = saved; } catch (e) {}
-  btn.addEventListener('click', function () {
+  var root = document.documentElement;
+  try { var t = localStorage.getItem('tp-theme'); if (t) root.dataset.theme = t; } catch (e) {}
+  document.getElementById('theme').addEventListener('click', function () {
     var dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
     root.dataset.theme = dark ? 'light' : 'dark';
     try { localStorage.setItem('tp-theme', root.dataset.theme); } catch (e) {}

@@ -2,6 +2,16 @@
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=300
 
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=3600
+
+/*.png
+  Cache-Control: public, max-age=604800
+
+/favicon.*
+  Cache-Control: public, max-age=604800
+
 /
   Cache-Control: public, max-age=300
   X-Content-Type-Options: nosniff
