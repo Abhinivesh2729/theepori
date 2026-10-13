@@ -115,3 +115,52 @@ func TestSetPreservesComments(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestPresetsWorkWithoutConfig(t *testing.T) {
+	l, err := setup(t, "default_model: groq/llama-3.3-70b-versatile\n", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, info, err := l.Model("groq/llama-3.3-70b-versatile")
+	if err != nil || p.Type != "openai-compatible" || p.BaseURL != "https://api.groq.com/openai/v1" || p.APIKeyEnv != "GROQ_API_KEY" {
+		t.Fatalf("p=%+v err=%v", p, err)
+	}
+	if info.Tools != "native" || !p.NeedsKey() {
+		t.Fatalf("info=%+v needsKey=%v", info, p.NeedsKey())
+	}
+	if lm, _ := l.Provider("lmstudio"); lm.NeedsKey() {
+		t.Fatal("local presets need no key")
+	}
+	if _, ok := l.Provider("nope"); ok {
+		t.Fatal("unknown provider resolved")
+	}
+	t.Setenv("DEEPSEEK_API_KEY", "x")
+	names := strings.Join(l.UsableNames(), ",")
+	if !strings.Contains(names, "deepseek") || strings.Contains(names, "groq") || strings.Contains(names, "lmstudio") {
+		t.Fatalf("usable = %s", names)
+	}
+}
+
+func TestPresetFieldAndOverrides(t *testing.T) {
+	l, err := setup(t, `providers:
+  work-ai:
+    preset: openai
+    api_key_env: WORK_OPENAI_KEY
+  groq:
+    base_url: https://proxy.example/v1
+`, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, _ := l.Provider("work-ai")
+	if w.Type != "openai" || w.BaseURL != "https://api.openai.com/v1" || w.APIKeyEnv != "WORK_OPENAI_KEY" {
+		t.Fatalf("work-ai = %+v", w)
+	}
+	g, _ := l.Provider("groq")
+	if g.BaseURL != "https://proxy.example/v1" || g.APIKeyEnv != "GROQ_API_KEY" || g.Type != "openai-compatible" {
+		t.Fatalf("groq = %+v", g)
+	}
+	if _, err := setup(t, "providers:\n  x:\n    preset: nonexistent\n", ""); err == nil || !strings.Contains(err.Error(), "preset") {
+		t.Fatalf("unknown preset: %v", err)
+	}
+}

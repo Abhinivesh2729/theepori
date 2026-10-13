@@ -275,18 +275,35 @@ func providersCmd() *cobra.Command {
 		Short: "List and manage LLM providers",
 		RunE:  func(*cobra.Command, []string) error { return listProviders() },
 	}
-	var typ, base, keyEnv string
+	var typ, base, keyEnv, preset string
+	var noTest bool
 	add := &cobra.Command{
 		Use:   "add <name>",
-		Short: "Add or update a provider in the global config",
-		Example: `  tp providers add groq --type openai-compatible --base-url https://api.groq.com/openai/v1 --api-key-env GROQ_API_KEY
-  tp providers add phone --type thinai --base-url 192.168.1.36
-  tp providers add local --type ollama --base-url localhost:11434`,
+		Short: "Add a provider from a preset (or a custom endpoint) to the global config",
+		Long: `Presets need no flags: tp providers add groq
+Presets also work without adding them — just export the key and use
+tp -m groq/<model>. Adding saves the provider so it shows up in listings and
+lets you override its base URL or key variable.
+
+See all presets: tp providers presets`,
+		Example: `  tp providers add groq                                  # preset: base URL + GROQ_API_KEY
+  tp providers add work-ai --preset openai --api-key-env WORK_OPENAI_KEY
+  tp providers add local --type openai-compatible --base-url http://localhost:8000/v1
+  tp providers add phone --type thinai --base-url 192.168.1.36`,
 		Args: cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
-			if typ == "" {
-				return fmt.Errorf("--type is required (%s)", strings.Join(config.ProviderTypes, ", "))
+			if preset == "" && typ == "" {
+				if _, ok := config.LookupPreset(name); ok {
+					preset = name
+				} else {
+					return fmt.Errorf("%q is not a preset — use --preset <name> or --type (see `tp providers presets`)", name)
+				}
+			}
+			if preset != "" {
+				if _, ok := config.LookupPreset(preset); !ok {
+					return fmt.Errorf("unknown preset %q (see `tp providers presets`)", preset)
+				}
 			}
 			path := config.GlobalPath()
 			set := func(k, v string) error {
@@ -298,26 +315,81 @@ func providersCmd() *cobra.Command {
 			if typ == "thinai" || typ == "ollama" {
 				base = ollama.NormalizeBaseURL(base)
 			}
-			for _, kv := range [][2]string{{"type", typ}, {"base_url", base}, {"api_key_env", keyEnv}} {
+			presetField := preset
+			if preset == name {
+				presetField = "" // a preset's own name resolves to it implicitly
+			}
+			fields := [][2]string{{"preset", presetField}, {"type", typ}, {"base_url", base}, {"api_key_env", keyEnv}}
+			if presetField == "" && typ == "" && base == "" && keyEnv == "" {
+				// Plain `add <preset>`: record it with its type so it appears in listings.
+				fields = [][2]string{{"type", mustPreset(preset).Type}}
+			}
+			for _, kv := range fields {
 				if err := set(kv[0], kv[1]); err != nil {
 					return err
 				}
 			}
-			if _, err := agent.LoadProject(cwd()); err != nil {
+			p, err := agent.LoadProject(cwd())
+			if p == nil || err != nil {
 				return err
 			}
-			fmt.Printf("provider %q saved to %s\n", name, path)
-			if keyEnv != "" && os.Getenv(keyEnv) == "" {
-				fmt.Printf("note: %s is not set in this shell — export it before use\n", keyEnv)
+			c := console()
+			pr, _ := p.Cfg.Provider(name)
+			c.Printf("%s provider %s saved %s\n", c.Green("✔"), c.Bold(name), c.Dim("("+path+")"))
+			c.Printf("  type %s · %s\n", pr.Type, orDefault(pr.BaseURL))
+			def := ""
+			if preset != "" {
+				def = mustPreset(preset).DefaultModel
 			}
-			fmt.Printf("test it: tp providers test %s\n", name)
+			switch {
+			case pr.NeedsKey() && pr.APIKey() == "":
+				c.Printf("  %s %s is not set\n", c.Yellow("!"), pr.APIKeyEnv)
+				if u := mustPreset(preset).KeyURL; u != "" {
+					c.Printf("    get a key: %s\n", u)
+				}
+				c.Printf("    then add to ~/.zshrc: export %s=...\n", pr.APIKeyEnv)
+			case !noTest && !((pr.Type == "thinai" || pr.Type == "ollama") && pr.BaseURL == ""):
+				testProvider(cmd.Context(), p.Cfg, name)
+			}
+			if def != "" {
+				c.Printf("  use it: tp -m %s/%s   or make it the default: tp models use %s/%s\n", name, def, name, def)
+			} else {
+				c.Printf("  models: tp models --remote   then: tp models use %s/<model>\n", name)
+			}
 			return nil
 		},
 	}
-	add.Flags().StringVar(&typ, "type", "", "anthropic | openai | openai-compatible | thinai | ollama")
-	add.Flags().StringVar(&base, "base-url", "", "API base URL")
-	add.Flags().StringVar(&keyEnv, "api-key-env", "", "environment variable holding the API key")
+	add.Flags().StringVar(&preset, "preset", "", "start from a preset (see `tp providers presets`)")
+	add.Flags().StringVar(&typ, "type", "", "custom provider: anthropic | openai | openai-compatible | thinai | ollama")
+	add.Flags().StringVar(&base, "base-url", "", "API base URL (overrides the preset)")
+	add.Flags().StringVar(&keyEnv, "api-key-env", "", "environment variable holding the API key (overrides the preset)")
+	add.Flags().BoolVar(&noTest, "no-test", false, "skip the live connectivity test")
 
+	presetsList := &cobra.Command{
+		Use:   "presets",
+		Short: "List built-in provider presets",
+		RunE: func(*cobra.Command, []string) error {
+			c := console()
+			for _, pr := range config.Presets() {
+				status := ""
+				switch {
+				case pr.Local:
+					status = c.Dim("local, no key")
+				case pr.KeySet():
+					status = c.Green("✔ " + pr.APIKeyEnv + " — ready")
+				default:
+					status = c.Dim(pr.APIKeyEnv + " not set")
+				}
+				base := pr.BaseURL
+				if base == "" {
+					base = map[bool]string{true: "(tp providers discover)", false: "(default)"}[pr.Local]
+				}
+				c.Printf("  %-11s %-18s %-56s %s\n", c.Bold(pr.Name), pr.Type, base, status)
+			}
+			c.Printf("\n%s\n", c.Dim("ready presets work without adding: tp -m groq/<model> · save one: tp providers add <preset>"))
+			return nil
+		},
+	}
 	remove := &cobra.Command{
 		Use: "remove <name>", Short: "Remove a provider from the global config", Args: cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
@@ -337,7 +409,7 @@ func providersCmd() *cobra.Command {
 			}
 			names := args
 			if len(names) == 0 {
-				names = p.Cfg.ProviderNames()
+				names = p.Cfg.UsableNames()
 			}
 			failed := false
 			for _, n := range names {
@@ -390,7 +462,7 @@ func providersCmd() *cobra.Command {
 		},
 	}
 	discover.Flags().BoolVar(&save, "save", false, "save the first server found to the global config")
-	cmd.AddCommand(&cobra.Command{Use: "list", Short: "List providers", RunE: func(*cobra.Command, []string) error { return listProviders() }}, add, remove, test, discover)
+	cmd.AddCommand(&cobra.Command{Use: "list", Short: "List providers", RunE: func(*cobra.Command, []string) error { return listProviders() }}, add, presetsList, remove, test, discover)
 	return cmd
 }
 
@@ -401,8 +473,8 @@ func listProviders() error {
 	}
 	c := console()
 	def := p.Cfg.ResolveDefaultModel()
-	for _, name := range p.Cfg.ProviderNames() {
-		pr := p.Cfg.Providers[name]
+	for _, name := range p.Cfg.UsableNames() {
+		pr, _ := p.Cfg.Provider(name)
 		cred := c.Dim("no key needed")
 		switch {
 		case pr.APIKeyEnv != "" && pr.APIKey() != "":
@@ -423,13 +495,13 @@ func listProviders() error {
 		}
 		c.Printf("%s %-12s %-18s %-40s %s\n", marker, c.Bold(name), pr.Type, base, cred)
 	}
-	c.Printf("%s\n", c.Dim("* = provider of the default model ("+orNone(def)+")"))
+	c.Printf("%s\n", c.Dim("* = provider of the default model ("+orNone(def)+") · more: tp providers presets"))
 	return err
 }
 
 func testProvider(ctx context.Context, cfg *config.Loaded, name string) bool {
 	c := console()
-	pr := cfg.Providers[name]
+	pr, _ := cfg.Provider(name)
 	if pr.NeedsKey() && pr.APIKey() == "" {
 		c.Printf("%s %-12s %s\n", c.Dim("-"), name, c.Dim("skipped: "+pr.APIKeyEnv+" not set"))
 		return true
@@ -456,11 +528,15 @@ func testProvider(ctx context.Context, cfg *config.Loaded, name string) bool {
 		_, model = llm.ParseRef(cfg.ResolveDefaultModel())
 	}
 	if model == "" || model == "loaded" {
-		ctype := pr.Type
-		if ctype == "openai-compatible" {
-			ctype = "openai"
+		// Preset suggestion, else the provider's own default, else whatever it lists.
+		presetName := cfg.Providers[name].Preset
+		if presetName == "" {
+			presetName = name
 		}
-		model = llm.DefaultModelFor(ctype)
+		model = mustPreset(presetName).DefaultModel
+		if model == "" || model == "loaded" {
+			model = llm.DefaultModelFor(pr.Type) // "" for compatible/local types
+		}
 		if model == "" && len(models) > 0 {
 			model = models[0].ID
 		}
@@ -527,8 +603,8 @@ func modelsCmd() *cobra.Command {
 
 func listModels(ctx context.Context, c *ui.Console, cfg *config.Loaded, remote bool) {
 	def := cfg.ResolveDefaultModel()
-	for _, name := range cfg.ProviderNames() {
-		pr := cfg.Providers[name]
+	for _, name := range cfg.UsableNames() {
+		pr, _ := cfg.Provider(name)
 		var models []llm.ModelInfo
 		ctype := pr.Type
 		if ctype == "openai-compatible" {
@@ -819,8 +895,8 @@ agent runs.`,
 			}
 			c := console()
 			missing := false
-			for _, name := range p.Cfg.ProviderNames() {
-				pr := p.Cfg.Providers[name]
+			for _, name := range p.Cfg.UsableNames() {
+				pr, _ := p.Cfg.Provider(name)
 				switch {
 				case pr.APIKeyEnv == "":
 					c.Printf("  %-12s %s\n", name, c.Dim("no credential configured"))
@@ -849,8 +925,8 @@ agent runs.`,
 			}
 			c := console()
 			bad := false
-			for _, name := range p.Cfg.ProviderNames() {
-				pr := p.Cfg.Providers[name]
+			for _, name := range p.Cfg.UsableNames() {
+				pr, _ := p.Cfg.Provider(name)
 				if pr.APIKey() == "" {
 					continue
 				}
@@ -959,8 +1035,8 @@ func doctorCmd() *cobra.Command {
 					warn("fallback " + ref + ": " + err.Error())
 				}
 			}
-			for _, name := range p.Cfg.ProviderNames() {
-				pr := p.Cfg.Providers[name]
+			for _, name := range p.Cfg.UsableNames() {
+				pr, _ := p.Cfg.Provider(name)
 				usable := (!pr.NeedsKey() || pr.APIKey() != "") && !((pr.Type == "thinai" || pr.Type == "ollama") && pr.BaseURL == "")
 				if !usable {
 					c.Printf("%s %s\n", c.Dim("-"), c.Dim("provider "+name+": not configured (skipped)"))
@@ -1160,4 +1236,16 @@ func auditCmd() *cobra.Command {
 	}
 	cmd.Flags().IntVarP(&n, "lines", "n", 30, "number of entries to show")
 	return cmd
+}
+
+func mustPreset(name string) config.Preset {
+	p, _ := config.LookupPreset(name)
+	return p
+}
+
+func orDefault(s string) string {
+	if s == "" {
+		return "(default endpoint)"
+	}
+	return s
 }

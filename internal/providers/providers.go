@@ -14,15 +14,22 @@ import (
 // Build constructs the named provider. Missing credentials are an
 // actionable error, not a late HTTP 401.
 func Build(cfg *config.Loaded, name string) (llm.Provider, error) {
-	p, ok := cfg.Providers[name]
+	p, ok := cfg.Provider(name)
 	if !ok {
-		return nil, &llm.Error{Provider: name, Kind: llm.ErrConfig, Message: "provider not configured",
-			Hint: "add it with `tp providers add " + name + " --type ...`"}
+		return nil, &llm.Error{Provider: name, Kind: llm.ErrConfig, Message: "unknown provider",
+			Hint: "see `tp providers presets`, or add a custom one: tp providers add " + name + " --type openai-compatible --base-url ..."}
 	}
 	key := p.APIKey()
 	if p.NeedsKey() && key == "" {
-		return nil, &llm.Error{Provider: name, Kind: llm.ErrAuth, Message: fmt.Sprintf("environment variable %s is not set", p.APIKeyEnv),
-			Hint: fmt.Sprintf("export %s=... (see `tp auth`)", p.APIKeyEnv)}
+		hint := fmt.Sprintf("export %s=... (see `tp auth`)", p.APIKeyEnv)
+		presetName := cfg.Providers[name].Preset
+		if presetName == "" {
+			presetName = name
+		}
+		if pr, ok := config.LookupPreset(presetName); ok && pr.KeyURL != "" {
+			hint = fmt.Sprintf("get a key at %s, then: export %s=...", pr.KeyURL, p.APIKeyEnv)
+		}
+		return nil, &llm.Error{Provider: name, Kind: llm.ErrAuth, Message: fmt.Sprintf("environment variable %s is not set", p.APIKeyEnv), Hint: hint}
 	}
 	switch p.Type {
 	case "anthropic":
@@ -88,11 +95,19 @@ func Target(cfg *config.Loaded, ref string) (llm.Target, error) {
 func KeyEnvVars(cfg *config.Loaded) []string {
 	seen := map[string]bool{}
 	var out []string
-	for _, p := range cfg.Providers {
-		if p.APIKeyEnv != "" && !seen[p.APIKeyEnv] {
-			seen[p.APIKeyEnv] = true
-			out = append(out, p.APIKeyEnv)
+	add := func(env string) {
+		if env != "" && !seen[env] {
+			seen[env] = true
+			out = append(out, env)
 		}
+	}
+	for name := range cfg.Providers {
+		p, _ := cfg.Provider(name)
+		add(p.APIKeyEnv)
+	}
+	// Preset keys are protected too, even when unused.
+	for _, pr := range config.Presets() {
+		add(pr.APIKeyEnv)
 	}
 	return out
 }

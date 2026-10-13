@@ -34,7 +34,8 @@ type Config struct {
 }
 
 type Provider struct {
-	Type            string                   `yaml:"type"`
+	Preset          string                   `yaml:"preset,omitempty"` // fill unset fields from this preset
+	Type            string                   `yaml:"type,omitempty"`
 	BaseURL         string                   `yaml:"base_url,omitempty"`
 	APIKeyEnv       string                   `yaml:"api_key_env,omitempty"`
 	Timeout         string                   `yaml:"timeout,omitempty"`
@@ -271,7 +272,14 @@ func mergeProject(dst *Config, src *Config) []string {
 // Validate reports every problem at once, each with a fix.
 func (l *Loaded) Validate() error {
 	var errs []string
-	for name, p := range l.Providers {
+	for name := range l.Providers {
+		p, _ := l.Provider(name)
+		if raw := l.Providers[name]; raw.Preset != "" {
+			if _, ok := LookupPreset(raw.Preset); !ok {
+				errs = append(errs, fmt.Sprintf("providers.%s.preset %q is unknown (tp providers presets)", name, raw.Preset))
+				continue
+			}
+		}
 		if !slices.Contains(ProviderTypes, p.Type) {
 			errs = append(errs, fmt.Sprintf("providers.%s.type %q is invalid (one of: %s)", name, p.Type, strings.Join(ProviderTypes, ", ")))
 		}
@@ -297,8 +305,8 @@ func (l *Loaded) Validate() error {
 			continue
 		}
 		prov, model := llm.ParseRef(ref)
-		if _, ok := l.Providers[prov]; !ok || model == "" {
-			errs = append(errs, fmt.Sprintf("model %q must be <provider>/<model> with a configured provider (have: %s)", ref, strings.Join(l.ProviderNames(), ", ")))
+		if _, ok := l.Provider(prov); !ok || model == "" {
+			errs = append(errs, fmt.Sprintf("model %q must be <provider>/<model> with a configured provider (configured: %s; presets: tp providers presets)", ref, strings.Join(l.ProviderNames(), ", ")))
 		}
 	}
 	if !slices.Contains(Modes, l.Permissions.Mode) {
@@ -331,9 +339,10 @@ func (p Provider) APIKey() string {
 	return strings.TrimSpace(os.Getenv(p.APIKeyEnv))
 }
 
-// NeedsKey reports whether a provider type requires an API key.
+// NeedsKey reports whether the provider requires an API key. Compatible
+// endpoints need one when a key variable is configured (local servers don't).
 func (p Provider) NeedsKey() bool {
-	return p.Type == "anthropic" || p.Type == "openai"
+	return p.Type == "anthropic" || p.Type == "openai" || (p.Type == "openai-compatible" && p.APIKeyEnv != "")
 }
 
 func (p Provider) TimeoutDuration() time.Duration {
@@ -361,7 +370,7 @@ func (l *Loaded) ResolveDefaultModel() string {
 // Model resolves catalog info plus config overrides for "provider/model".
 func (l *Loaded) Model(ref string) (Provider, llm.ModelInfo, error) {
 	prov, id := llm.ParseRef(ref)
-	p, ok := l.Providers[prov]
+	p, ok := l.Provider(prov)
 	if !ok || id == "" {
 		return Provider{}, llm.ModelInfo{}, fmt.Errorf("unknown model %q — use <provider>/<model>; providers: %s", ref, strings.Join(l.ProviderNames(), ", "))
 	}
@@ -402,7 +411,8 @@ func (l *Loaded) Model(ref string) (Provider, llm.ModelInfo, error) {
 // EffortFor returns the effort for a model (per-model override, else agent default).
 func (l *Loaded) EffortFor(ref string) string {
 	prov, id := llm.ParseRef(ref)
-	if o, ok := l.Providers[prov].Models[id]; ok && o.Effort != "" {
+	p, _ := l.Provider(prov)
+	if o, ok := p.Models[id]; ok && o.Effort != "" {
 		return o.Effort
 	}
 	return l.Agent.Effort

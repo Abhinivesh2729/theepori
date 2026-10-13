@@ -36,7 +36,7 @@ tp review --base main                             # review a branch
 | `tp "task"` | Run one task and exit. Reads the task from stdin when piped |
 | `tp init` | Create project config; detects the test command |
 | `tp config [show\|get\|set\|unset\|edit\|path]` | Global settings, or `--project` |
-| `tp providers [list\|add\|remove\|test\|discover]` | Manage LLM providers; `discover` finds Thinai on your Wi-Fi |
+| `tp providers [list\|presets\|add\|remove\|test\|discover]` | Manage LLM providers; `add <preset>` needs no flags; `discover` finds Thinai on your Wi-Fi |
 | `tp models [use <provider/model>]` | List models (`--remote` for live lists) and set the default |
 | `tp plan "task"` | Investigate read-only and propose a plan |
 | `tp session [list\|resume\|show\|delete]` | Saved sessions for this project |
@@ -62,10 +62,17 @@ Models are written as `provider/model`, for example `anthropic/claude-opus-5-5`,
 | `openai-compatible` | Chat Completions | Groq, OpenRouter, vLLM, LM Studio and similar; `base_url` is required |
 | `thinai` / `ollama` | Ollama `/api/chat` | Thinai phone app or local Ollama; `loaded` uses whichever model is already resident |
 
+**Presets** cover Anthropic, OpenAI, Gemini, Groq, OpenRouter, DeepSeek, Mistral, xAI, Together, Fireworks, Cerebras, Ollama, LM Studio and Thinai. A preset works as soon as its key is set:
+
 ```bash
-tp providers add groq --type openai-compatible --base-url https://api.groq.com/openai/v1 --api-key-env GROQ_API_KEY
-tp providers discover --save          # Thinai: Server tab → Start → Share on local network
-tp models use anthropic/claude-sonnet-5-5
+export GROQ_API_KEY=...
+tp -m groq/llama-3.3-70b-versatile "explain this repo"   # no setup needed
+tp providers presets                                    # all presets + key status
+tp providers add groq                                   # save it (live-tested)
+tp providers add work-ai --preset openai --api-key-env WORK_OPENAI_KEY
+tp providers add vllm --type openai-compatible --base-url http://gpu-box:8000/v1
+tp providers discover --save                            # Thinai: Server tab → Start → Share on local network
+tp models use groq/llama-3.3-70b-versatile
 tp config set fallback_models "[openai/gpt-5]"
 ```
 
