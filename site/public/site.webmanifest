@@ -1,0 +1,11 @@
+{
+  "name": "Thee Pori",
+  "short_name": "Thee Pori",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#16110e",
+  "background_color": "#16110e",
+  "display": "browser"
+}

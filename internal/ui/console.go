@@ -277,7 +277,7 @@ func (c *Console) TurnEnd(s agent.TurnSummary) {
 				}
 				c.printf("  %s %s\n", f.Path, c.dim(stat))
 			}
-			c.printf("%s\n", c.dim(fmt.Sprintf("  (%d diff lines — /diff to view)", lines)))
+			c.printf("%s\n", c.dim(fmt.Sprintf("  (%d diff lines; /diff to view)", lines)))
 		}
 	}
 	if len(s.Tests) > 0 {
@@ -364,7 +364,7 @@ func (c *Console) Approve(ctx context.Context, req permission.Request) (permissi
 		if req.Risk == permission.RiskDestructive {
 			prompt = fmt.Sprintf("%s Type %s to allow, anything else denies (feedback is passed to the agent): ", c.red("╰─"), c.bold("yes"))
 		} else {
-			prompt = fmt.Sprintf("%s Allow? %s yes · %s always this session · %s no — or type feedback: ", c.yellow("╰─"), c.bold("[y]"), c.bold("[a]"), c.bold("[n]"))
+			prompt = fmt.Sprintf("%s Allow? %s yes · %s always this session · %s no, or type feedback: ", c.yellow("╰─"), c.bold("[y]"), c.bold("[a]"), c.bold("[n]"))
 		}
 		ans, err := c.ReadLine(ctx, prompt)
 		if err != nil {
@@ -373,7 +373,7 @@ func (c *Console) Approve(ctx context.Context, req permission.Request) (permissi
 		a := strings.TrimSpace(ans)
 		la := strings.ToLower(a)
 		if slashCmdRe.MatchString(a) {
-			c.printf("%s\n", c.dim("  commands aren't available while approving — answer first (Ctrl-C to interrupt the turn)"))
+			c.printf("%s\n", c.dim("  commands aren't available while approving; answer first (Ctrl-C to interrupt the turn)"))
 			continue
 		}
 		if req.Risk == permission.RiskDestructive {

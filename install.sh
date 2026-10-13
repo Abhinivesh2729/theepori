@@ -1,5 +1,5 @@
 #!/bin/sh
-# Thee Pori (தீப்பொறி) installer — https://tp.0xabby.space
+# Thee Pori (தீப்பொறி) installer: https://tp.0xabby.space
 #
 #   curl -fsSL https://tp.0xabby.space/install.sh | sh
 #

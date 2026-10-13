@@ -3,12 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Thee Pori — tp coding agent</title>
+<title>Thee Pori: the tp coding agent</title>
 <meta name="description" content="Thee Pori (தீப்பொறி) is a local-first AI coding agent for your terminal. One binary, your choice of model, every change shown before it happens.">
-<meta property="og:title" content="Thee Pori (தீப்பொறி) — local-first AI coding agent">
+<meta property="og:title" content="Thee Pori (தீப்பொறி): a local-first AI coding agent">
 <meta property="og:description" content="Install with one command. Understand → Plan → Modify → Test → Review, right in your terminal.">
 <meta name="theme-color" content="#16110e">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='1' x2='0' y2='0'%3E%3Cstop offset='0' stop-color='%23ffb000'/%3E%3Cstop offset='.55' stop-color='%23ff6a00'/%3E%3Cstop offset='1' stop-color='%23e8261c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23g)' d='M33 3c3 12 15 17 15 33a16 16 0 0 1-32 0c0-8 4-13 8-17 0 6 2 9 5 10-2-10 1-18 4-26z'/%3E%3C/svg%3E">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta property="og:image" content="https://tp.0xabby.space/icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Tamil:wght@700;800&display=swap" rel="stylesheet">
@@ -52,13 +56,14 @@ code, pre, .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace
 nav { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
 nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
-.brand { display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--text); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; color: var(--text); white-space: nowrap; letter-spacing: -.01em; }
 .brand:hover { text-decoration: none; }
 .brand svg { width: 22px; height: 22px; }
-.links { display: flex; gap: 20px; font-size: 14px; font-weight: 500; }
+.links { display: flex; align-items: center; gap: 20px; font-size: 14px; font-weight: 500; white-space: nowrap; }
 .links a { color: var(--muted); }
 .links a:hover { color: var(--text); text-decoration: none; }
-@media (max-width: 640px) { .links .opt { display: none; } }
+@media (max-width: 860px) { .links .opt { display: none; } }
+@media (max-width: 420px) { .links .opt2 { display: none; } .links { gap: 14px; } }
 
 /* hero */
 .hero { padding: 64px 0 40px; text-align: center; }
@@ -145,6 +150,17 @@ details p { color: var(--muted); margin: 10px 0 0; }
 
 footer { padding: 36px 0 48px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
 footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
+.nav-cta { color: #fff !important; background: linear-gradient(135deg, #ff8a1f, #e8261c); padding: 6px 14px; border-radius: 999px; font-weight: 600; }
+.nav-cta:hover { filter: brightness(1.08); }
+.contact { text-align: center; }
+.contact .sub { margin-left: auto; margin-right: auto; }
+.socials { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
+.social { display: inline-flex; align-items: center; gap: 12px; padding: 14px 22px; border-radius: 14px;
+  background: var(--card); border: 1px solid var(--line); color: var(--text); font-weight: 600; box-shadow: var(--shadow); min-width: 220px; }
+.social:hover { text-decoration: none; border-color: var(--accent); transform: translateY(-1px); }
+.social svg { width: 22px; height: 22px; flex: none; }
+.social span { display: flex; flex-direction: column; text-align: left; line-height: 1.3; }
+.social small { color: var(--muted); font-weight: 500; }
 .theme-btn { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 8px; padding: 4px 10px; cursor: pointer; font: inherit; font-size: 13px; }
 </style>
 </head>
@@ -153,14 +169,15 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space
 <nav>
   <div class="wrap">
     <a class="brand" href="#top" aria-label="Thee Pori home">
-      <svg viewBox="0 0 64 80" aria-hidden="true"><use href="#flame-shape"/></svg> tp
+      <svg viewBox="0 0 64 80" aria-hidden="true"><use href="#flame-shape"/></svg> Thee Pori
     </a>
     <div class="links">
       <a href="#install">Install</a>
-      <a href="#start">Get started</a>
+      <a class="opt2" href="#start">Get started</a>
       <a class="opt" href="#features">Features</a>
       <a class="opt" href="#commands">Commands</a>
-      <a href="https://github.com/Abhinivesh2729/theepori">GitHub</a>
+      <a class="opt" href="https://github.com/Abhinivesh2729/theepori">GitHub</a>
+      <a class="nav-cta" href="#contact">Contact</a>
     </div>
   </div>
 </nav>
@@ -176,6 +193,8 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space
       <stop offset="0" stop-color="#fff3b0"/>
       <stop offset="1" stop-color="#ffd60a"/>
     </linearGradient>
+    <symbol id="i-x" viewBox="0 0 24 24"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23 22h-6.2l-4.8-6.3L6.4 22H3.3l7.3-8.3L1 2h6.3l4.4 5.8L18.9 2Zm-1.1 18.1h1.7L6.3 3.8H4.5l13.3 16.3Z"/></symbol>
+    <symbol id="i-ig" viewBox="0 0 24 24"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.6" cy="6.4" r="1.3" fill="currentColor"/></symbol>
     <g id="flame-shape">
       <path fill="url(#fg)" d="M34 2c4 16 20 23 20 45a22 22 0 0 1-44 0c0-11 5-18 11-23 0 8 3 12 7 14-3-14 1-25 6-36z"/>
       <path fill="url(#core)" d="M32 40c3 7 10 10 10 19a10 10 0 0 1-20 0c0-5 3-8 5-10 0 4 2 6 4 6-1-6 0-10 1-15z"/>
@@ -193,14 +212,14 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space
 
     <div class="install" id="install">
       <div class="tabs" role="tablist">
-        <button class="tab" role="tab" aria-selected="true" data-cmd="curl -fsSL https://tp.0xabby.space/install.sh | sh" data-note="macOS (Intel &amp; Apple Silicon) and Linux (x86_64 &amp; arm64). Installs to ~/.local/bin — no sudo.">macOS / Linux</button>
+        <button class="tab" role="tab" aria-selected="true" data-cmd="curl -fsSL https://tp.0xabby.space/install.sh | sh" data-note="macOS (Intel &amp; Apple Silicon) and Linux (x86_64 &amp; arm64). Installs to ~/.local/bin, no sudo needed.">macOS / Linux</button>
         <button class="tab" role="tab" aria-selected="false" data-cmd="wsl --install" data-note="Native Windows support is coming. For now: run this in PowerShell, restart, open Ubuntu, then run the macOS / Linux command inside it.">Windows</button>
       </div>
       <div class="cmd">
         <code id="cmd">curl -fsSL https://tp.0xabby.space/install.sh | sh</code>
         <button class="copy" id="copy" type="button">Copy</button>
       </div>
-      <p class="note" id="note">macOS (Intel &amp; Apple Silicon) and Linux (x86_64 &amp; arm64). Installs to ~/.local/bin — no sudo.</p>
+      <p class="note" id="note">macOS (Intel &amp; Apple Silicon) and Linux (x86_64 &amp; arm64). Installs to ~/.local/bin, no sudo needed.</p>
     </div>
 
     <div class="badges">
@@ -261,7 +280,7 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space
 <span class="c-y">│</span> <span class="c-add">+	for _, it := range items {</span>
 <span class="c-y">│</span> <span class="c-del">-	if sub &gt; 10000 {</span>
 <span class="c-y">│</span> <span class="c-add">+	if sub &gt;= 10000 {</span>
-<span class="c-y">╰─</span> Allow? <span class="c-b">[y]</span> yes · <span class="c-b">[a]</span> always · <span class="c-b">[n]</span> no — or type feedback: <span class="c-o">y</span>
+<span class="c-y">╰─</span> Allow? <span class="c-b">[y]</span> yes · <span class="c-b">[a]</span> always · <span class="c-b">[n]</span> no, or type feedback: <span class="c-o">y</span>
 <span class="c-y">●</span> <span class="c-b">run_tests</span> go test ./...          <span class="c-ok">⎿ passed · 0.7s</span>
 
 Fixed both bugs in Total; tests pass.
@@ -362,12 +381,24 @@ Fixed both bugs in Total; tests pass.
   </div>
 </section>
 
+<section class="alt" id="contact">
+  <div class="wrap contact">
+    <h2>Say hello</h2>
+    <p class="sub">Questions, ideas or bugs? Reach out directly.</p>
+    <div class="socials">
+      <a class="social" href="https://x.com/0xAbhi__" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-x"/></svg><span>Follow on X <small>@0xAbhi__</small></span></a>
+      <a class="social" href="https://www.instagram.com/0xabhi/" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-ig"/></svg><span>Instagram <small>@0xabhi</small></span></a>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
-    <span><span lang="ta">தீப்பொறி</span> Thee Pori — open source under the MIT License</span>
+    <span><span lang="ta">தீப்பொறி</span> Thee Pori. Open source under the MIT License.</span>
     <span>
       <a href="https://github.com/Abhinivesh2729/theepori">GitHub</a> ·
-      <a href="https://github.com/Abhinivesh2729/theepori/releases">Releases</a> ·
+      <a href="https://x.com/0xAbhi__" target="_blank" rel="noopener">X</a> ·
+      <a href="https://www.instagram.com/0xabhi/" target="_blank" rel="noopener">Instagram</a> ·
       <a href="/install.sh">install.sh</a> ·
       <button class="theme-btn" id="theme" type="button">Theme</button>
     </span>
