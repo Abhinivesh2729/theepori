@@ -153,7 +153,7 @@ func TestRunTestsSummary(t *testing.T) {
 		t.Fatalf("output: %q", res.Output)
 	}
 	tests := env.Tracker.State().Tests
-	if len(tests) != 1 || tests[0].Passed || !strings.Contains(tests[0].Summary, "1 packages ok") {
+	if len(tests) != 1 || tests[0].Passed || tests[0].Summary != "1 test(s) failed in 1 package(s), 1 package(s) ok" {
 		t.Fatalf("tests = %+v", tests)
 	}
 	if got := SummarizeTests("==== 3 passed, 1 failed in 0.2s ====", false); got != "3 passed, 1 failed" {
@@ -172,5 +172,27 @@ func TestGrepAndList(t *testing.T) {
 	res, _, _ = run(t, env, ListDir{}, `{}`)
 	if !strings.Contains(res.Output, "src/app.go") {
 		t.Fatalf("list: %q", res.Output)
+	}
+}
+
+func TestLineStatIgnoresHeaderLookalikes(t *testing.T) {
+	old := "select 1;\n-- TODO remove\n-- a/b\nkeep\n"
+	new := "select 1;\nkeep\n++ added\n"
+	if add, del := LineStat(old, new); add != 1 || del != 2 {
+		t.Fatalf("add=%d del=%d", add, del)
+	}
+	if add, del := LineStat("", "a\nb\n"); add != 2 || del != 0 {
+		t.Fatalf("new file: add=%d del=%d", add, del)
+	}
+}
+
+func TestGoTestSummaryRealOutput(t *testing.T) {
+	out := "--- FAIL: TestX (0.00s)\n    --- FAIL: TestX/sub (0.00s)\n        x_test.go:9: boom\nFAIL\nFAIL\texample.com/a\t0.2s\nok  \texample.com/b\t0.1s\nFAIL\nexit status 1\nmake: *** [test] Error 1\n"
+	if got := SummarizeTests(out, false); got != "1 test(s) failed in 1 package(s), 1 package(s) ok" {
+		t.Fatalf("got %q", got)
+	}
+	build := "# example.com/c\n./c.go:3:2: undefined: y\nFAIL\texample.com/c [build failed]\nFAIL\n"
+	if got := SummarizeTests(build, false); got != "1 package(s) failed to build or panicked, 0 package(s) ok" {
+		t.Fatalf("build failure: %q", got)
 	}
 }

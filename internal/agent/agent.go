@@ -31,7 +31,15 @@ type UI interface {
 	TurnEnd(s TurnSummary)
 }
 
+// ChangedFile is a file changed this turn. Shown means the user approved
+// exactly this turn's change with a complete diff preview.
+type ChangedFile struct {
+	tools.FileChange
+	Shown bool
+}
+
 type TurnSummary struct {
+	Files     []ChangedFile
 	Changed   []string
 	Diff      string
 	Tests     []tools.TestRecord
@@ -54,7 +62,8 @@ type Agent struct {
 	UI      UI
 
 	client     *llm.Client
-	notes      []string // context to attach to the next user message
+	notes      []string          // context to attach to the next user message
+	approved   map[string]string // path → diff the user approved this turn
 	lastMode   string
 	turnUsage  llm.Usage
 	turnCost   float64
@@ -103,6 +112,7 @@ func (a *Agent) Run(ctx context.Context, input string) error {
 	}
 	a.repairHistory()
 	a.Env.Tracker.StartTurn()
+	a.approved = map[string]string{}
 	a.turnUsage, a.turnCost = llm.Usage{}, 0
 	start := time.Now()
 	a.Session.Status = session.StatusActive
@@ -125,6 +135,10 @@ func (a *Agent) Run(ctx context.Context, input string) error {
 	summary.Changed = changedIn(a.Env.Tracker)
 	if len(summary.Changed) > 0 {
 		summary.Diff = a.Env.Tracker.Diff(summary.Changed)
+		for _, fc := range a.Env.Tracker.TurnChanges(summary.Changed) {
+			shown := fc.TurnDiff != "" && a.approved[fc.Path] == fc.TurnDiff
+			summary.Files = append(summary.Files, ChangedFile{FileChange: fc, Shown: shown})
+		}
 	}
 	summary.Tests = a.Env.Tracker.TestsSince(start)
 	summary.Usage, summary.Cost = a.turnUsage, a.turnCost
@@ -267,6 +281,14 @@ func (a *Agent) exec(ctx context.Context, c llm.ToolCall) llm.ToolResult {
 		a.UI.ToolResult(c.Name, tools.Result{IsError: true, Display: "denied"})
 		a.Audit.Log(entry)
 		return res
+	}
+	if outcome.How == "approved" && call.Perm.Path != "" && call.Perm.Detail != "" &&
+		strings.Count(call.Perm.Detail, "\n") <= tools.PreviewLines {
+		if _, seen := a.approved[call.Perm.Path]; !seen {
+			a.approved[call.Perm.Path] = call.Perm.Detail
+		} else {
+			a.approved[call.Perm.Path] = "" // several edits: the turn diff is no single preview
+		}
 	}
 	r := call.Run(ctx)
 	entry.ExitCode, entry.DurationMs = r.ExitCode, r.Duration.Milliseconds()

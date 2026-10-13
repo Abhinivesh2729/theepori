@@ -275,3 +275,64 @@ func DiffStat(diff string) (add, del int) {
 	}
 	return
 }
+
+// PreviewLines is how many diff lines an approval prompt shows; a longer
+// preview is truncated and does not count as "seen".
+const PreviewLines = 80
+
+// LineStat counts added/removed lines between two texts (no diff parsing,
+// so content lines that look like headers can't confuse it).
+func LineStat(old, new string) (add, del int) {
+	m := difflib.NewMatcher(splitLines(old), splitLines(new))
+	for _, op := range m.GetOpCodes() {
+		switch op.Tag {
+		case 'r':
+			del += op.I2 - op.I1
+			add += op.J2 - op.J1
+		case 'd':
+			del += op.I2 - op.I1
+		case 'i':
+			add += op.J2 - op.J1
+		}
+	}
+	return
+}
+
+// FileChange summarises one changed file.
+type FileChange struct {
+	Path     string
+	Add, Del int // vs. session baseline
+	TurnDiff string
+	Binary   bool
+}
+
+// TurnChanges describes files changed in the latest turn: stats against the
+// session baseline and the diff of just this turn's change.
+func (t *Tracker) TurnChanges(files []string) []FileChange {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	var turn map[string]Snapshot
+	if len(t.s.Turns) > 0 {
+		turn = t.s.Turns[len(t.s.Turns)-1]
+	}
+	var out []FileChange
+	for _, rel := range files {
+		base, ok := t.s.Originals[rel]
+		if !ok {
+			continue
+		}
+		cur := snapshot(filepath.Join(t.s.Root, rel))
+		fc := FileChange{Path: rel}
+		if base.Skipped || cur.Skipped {
+			fc.Binary = true
+			out = append(out, fc)
+			continue
+		}
+		fc.Add, fc.Del = LineStat(base.Content, cur.Content)
+		if ts, ok := turn[rel]; ok && !ts.Skipped {
+			fc.TurnDiff = UnifiedDiff(rel, ts.Content, cur.Content, ts.Existed, cur.Existed)
+		}
+		out = append(out, fc)
+	}
+	return out
+}

@@ -363,7 +363,7 @@ func (t WriteFile) Prepare(env *Env, input json.RawMessage) (*Call, error) {
 	}
 	old, existed := readMaybe(abs)
 	diff := UnifiedDiff(rel, old, *in.Content, existed, true)
-	add, del := DiffStat(diff)
+	add, del := LineStat(old, *in.Content)
 	verb := "create"
 	if existed {
 		verb = "overwrite"
@@ -453,7 +453,7 @@ func (t EditFile) Prepare(env *Env, input json.RawMessage) (*Call, error) {
 	}
 	updated := strings.Replace(old, *in.OldString, *in.NewString, map[bool]int{true: -1, false: 1}[in.ReplaceAll])
 	diff := UnifiedDiff(rel, old, updated, true, true)
-	add, del := DiffStat(diff)
+	add, del := LineStat(old, updated)
 	return &Call{
 		Perm: permission.Request{
 			Tool: t.Name(), Risk: permission.RiskWrite, Path: rel, Key: "write",

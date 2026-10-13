@@ -261,11 +261,12 @@ func (t RunTests) Prepare(env *Env, input json.RawMessage) (*Call, error) {
 }
 
 var (
-	pytestRe = regexp.MustCompile(`(\d+ (passed|failed|error|errors|skipped)(, )?)+`)
-	jestRe   = regexp.MustCompile(`Tests:\s+[^\n]+`)
-	cargoRe  = regexp.MustCompile(`test result: [^\n]+`)
-	goOkRe   = regexp.MustCompile(`(?m)^ok\s`)
-	goFailRe = regexp.MustCompile(`(?m)^(FAIL|--- FAIL)`)
+	pytestRe     = regexp.MustCompile(`(\d+ (passed|failed|error|errors|skipped)(, )?)+`)
+	jestRe       = regexp.MustCompile(`Tests:\s+[^\n]+`)
+	cargoRe      = regexp.MustCompile(`test result: [^\n]+`)
+	goOkRe       = regexp.MustCompile(`(?m)^ok\s`)
+	goFailPkgRe  = regexp.MustCompile(`(?m)^FAIL[ \t]+\S+`)
+	goFailTestRe = regexp.MustCompile(`(?m)^--- FAIL:`) // top-level tests only
 )
 
 // SummarizeTests extracts a one-line summary from common runners' output.
@@ -279,9 +280,14 @@ func SummarizeTests(out string, passed bool) string {
 	if ms := pytestRe.FindAllString(out, -1); len(ms) > 0 {
 		return ms[len(ms)-1]
 	}
-	ok, fail := len(goOkRe.FindAllString(out, -1)), len(goFailRe.FindAllString(out, -1))
-	if ok+fail > 0 {
-		return fmt.Sprintf("%d packages ok, %d failures", ok, fail)
+	ok, failPkg, failTest := len(goOkRe.FindAllString(out, -1)), len(goFailPkgRe.FindAllString(out, -1)), len(goFailTestRe.FindAllString(out, -1))
+	switch {
+	case failTest > 0:
+		return fmt.Sprintf("%d test(s) failed in %d package(s), %d package(s) ok", failTest, failPkg, ok)
+	case failPkg > 0:
+		return fmt.Sprintf("%d package(s) failed to build or panicked, %d package(s) ok", failPkg, ok)
+	case ok > 0:
+		return fmt.Sprintf("%d package(s) ok", ok)
 	}
 	if passed {
 		return "exit 0"

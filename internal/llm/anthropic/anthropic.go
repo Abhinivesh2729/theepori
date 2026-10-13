@@ -60,7 +60,7 @@ func (p *Provider) Chat(ctx context.Context, req llm.Request, onEvent llm.Stream
 		Messages:  convertMessages(req.Messages),
 		// Top-level automatic prompt caching: system and tools are frozen per
 		// session and history is append-only, so the prefix stays cacheable.
-		CacheControl: sdk.BetaCacheControlEphemeralParam{},
+		CacheControl: sdk.NewBetaCacheControlEphemeralParam(),
 	}
 	if req.System != "" {
 		params.System = []sdk.BetaTextBlockParam{{Text: req.System}}

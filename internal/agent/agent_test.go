@@ -268,3 +268,43 @@ func TestCompaction(t *testing.T) {
 		t.Fatal("compaction not counted")
 	}
 }
+
+// The turn summary may only skip a diff the user approved verbatim.
+func TestTurnSummaryShownOnlyForApprovedPreview(t *testing.T) {
+	dir := repo(t)
+	edit := func(id, from, to string) llm.Part {
+		return call(id, "edit_file", map[string]any{"path": "calc.sh", "old_string": from, "new_string": to})
+	}
+	// One approved edit → shown.
+	fake := &fakeModel{turns: []llm.Message{asst(edit("1", "$1 + $2", "$1 + $2 + 0")), asst(text("done"))}}
+	a, ui := newTestAgent(t, dir, fake, "default", approver{allow: true}, "")
+	if err := a.Run(context.Background(), "edit"); err != nil {
+		t.Fatal(err)
+	}
+	if len(ui.end.Files) != 1 || !ui.end.Files[0].Shown || ui.end.Files[0].Add != 1 || ui.end.Files[0].Del != 1 {
+		t.Fatalf("files = %+v", ui.end.Files)
+	}
+	// Approved edit, then the file is changed again by a command → not shown.
+	fake.turns = []llm.Message{
+		asst(edit("2", "+ 0", "+ 1")),
+		asst(call("3", "run_command", map[string]any{"command": "printf '# x\\n' >> calc.sh"})),
+		asst(text("done")),
+	}
+	fake.reqs = nil
+	if err := a.Run(context.Background(), "again"); err != nil {
+		t.Fatal(err)
+	}
+	if len(ui.end.Files) != 1 || ui.end.Files[0].Shown {
+		t.Fatalf("command-modified file must show its full diff: %+v", ui.end.Files)
+	}
+	// Auto-approved (accept-edits) → never previewed → not shown.
+	_ = a.SetMode("accept-edits")
+	fake.turns = []llm.Message{asst(edit("4", "+ 1", "+ 2")), asst(text("done"))}
+	fake.reqs = nil
+	if err := a.Run(context.Background(), "third"); err != nil {
+		t.Fatal(err)
+	}
+	if ui.end.Files[0].Shown {
+		t.Fatal("auto-approved edits were never previewed")
+	}
+}

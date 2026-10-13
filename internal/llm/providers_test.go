@@ -208,6 +208,9 @@ data: {"type":"message_stop"}`,
 	if th["type"] != "adaptive" || b0["output_config"].(map[string]any)["effort"] != "medium" {
 		t.Fatalf("thinking/effort = %v %v", b0["thinking"], b0["output_config"])
 	}
+	if cc, ok := b0["cache_control"].(map[string]any); !ok || cc["type"] != "ephemeral" {
+		t.Fatalf("top-level cache_control missing: %v", b0["cache_control"])
+	}
 	tool := b0["tools"].([]any)[0].(map[string]any)
 	if tool["eager_input_streaming"] != true || tool["input_schema"].(map[string]any)["additionalProperties"] != false {
 		t.Fatalf("tool = %v", tool)

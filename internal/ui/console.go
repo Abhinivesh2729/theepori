@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -20,6 +21,10 @@ import (
 )
 
 var ErrInterrupted = errors.New("interrupted")
+
+// slashCmdRe matches a bare REPL command ("/status"), not feedback that
+// merely starts with a path ("/tmp is wrong").
+var slashCmdRe = regexp.MustCompile(`^/[a-z]+$`)
 
 type Console struct {
 	Out          io.Writer
@@ -248,14 +253,29 @@ func (c *Console) Error(err error) {
 func (c *Console) TurnEnd(s agent.TurnSummary) {
 	c.newline()
 	c.kind = ""
-	if len(s.Changed) > 0 {
+	if len(s.Files) > 0 {
 		c.printf("\n%s\n", c.bold("Changes"))
+		allShown := true
+		for _, f := range s.Files {
+			allShown = allShown && f.Shown
+		}
 		lines := strings.Count(s.Diff, "\n")
-		if lines <= 150 {
+		switch {
+		case allShown:
+			// Every change was approved with a full preview: don't repeat it.
+			for _, f := range s.Files {
+				c.printf("  %s %s\n", f.Path, c.dim(fmt.Sprintf("+%d -%d", f.Add, f.Del)))
+			}
+			c.printf("%s\n", c.dim("  (/diff shows the full session diff)"))
+		case lines <= 150:
 			c.printf("%s", c.Diff(s.Diff, 150))
-		} else {
-			for _, f := range s.Changed {
-				c.printf("  %s\n", f)
+		default:
+			for _, f := range s.Files {
+				stat := fmt.Sprintf("+%d -%d", f.Add, f.Del)
+				if f.Binary {
+					stat = "binary/large"
+				}
+				c.printf("  %s %s\n", f.Path, c.dim(stat))
 			}
 			c.printf("%s\n", c.dim(fmt.Sprintf("  (%d diff lines — /diff to view)", lines)))
 		}
@@ -331,7 +351,7 @@ func (c *Console) Approve(ctx context.Context, req permission.Request) (permissi
 		c.printf("%s %s\n", bar, c.red("⚠ "+req.Reason))
 	}
 	if req.Detail != "" && req.Detail != req.Command {
-		for _, l := range strings.Split(strings.TrimRight(c.Diff(req.Detail, 80), "\n"), "\n") {
+		for _, l := range strings.Split(strings.TrimRight(c.Diff(req.Detail, tools.PreviewLines), "\n"), "\n") {
 			c.printf("%s %s\n", bar, l)
 		}
 	} else {
@@ -352,6 +372,10 @@ func (c *Console) Approve(ctx context.Context, req permission.Request) (permissi
 		}
 		a := strings.TrimSpace(ans)
 		la := strings.ToLower(a)
+		if slashCmdRe.MatchString(a) {
+			c.printf("%s\n", c.dim("  commands aren't available while approving — answer first (Ctrl-C to interrupt the turn)"))
+			continue
+		}
 		if req.Risk == permission.RiskDestructive {
 			if la == "yes" {
 				return permission.Answer{Allow: true}, nil
