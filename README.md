@@ -18,7 +18,7 @@ Requires Go 1.27+ to build. Runs on macOS and Linux.
 ## Quick start
 
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...     # and/or OPENAI_API_KEY
+tp providers                            # pick Anthropic with ↑/↓, paste your key, choose a default model
 cd your-repo
 tp init                                 # .theepori/config.yaml (+ global config on first run)
 tp doctor                               # verify config, keys, connectivity
@@ -36,13 +36,13 @@ tp review --base main                             # review a branch
 | `tp "task"` | Run one task and exit. Reads the task from stdin when piped |
 | `tp init` | Create project config; detects the test command |
 | `tp config [show\|get\|set\|unset\|edit\|path]` | Global settings, or `--project` |
-| `tp providers [list\|presets\|add\|remove\|test\|discover]` | Manage LLM providers; `add <preset>` needs no flags; `discover` finds Thinai on your Wi-Fi |
+| `tp providers` | Interactive: add a provider by pasting its key, pick a default model, test or remove. Also `list`, `add`, `remove`, `test`, `discover` |
 | `tp models [use <provider/model>]` | List models (`--remote` for live lists) and set the default |
 | `tp plan "task"` | Investigate read-only and propose a plan |
 | `tp session [list\|resume\|show\|delete]` | Saved sessions for this project |
 | `tp review [--staged\|--base ref]` | Review changes (read-only agent) |
 | `tp tools` | Tools and their risk levels |
-| `tp auth [check]` | Credential status (env vars only) |
+| `tp auth [check]` | Where each key comes from (keychain/env), and verify it |
 | `tp doctor [--offline]` | Diagnose configuration and connectivity |
 | `tp memory [add\|clear\|path]` | Project memory included in new sessions |
 | `tp audit [-n N]` | Local audit log of tool actions |
@@ -62,19 +62,22 @@ Models are written as `provider/model`, for example `anthropic/claude-opus-5-5`,
 | `openai-compatible` | Chat Completions | Groq, OpenRouter, vLLM, LM Studio and similar; `base_url` is required |
 | `thinai` / `ollama` | Ollama `/api/chat` | Thinai phone app or local Ollama; `loaded` uses whichever model is already resident |
 
-**Presets** cover Anthropic, OpenAI, Gemini, Groq, OpenRouter, DeepSeek, Mistral, xAI, Together, Fireworks, Cerebras, Ollama, LM Studio and Thinai. A preset works as soon as its key is set:
+**Adding a provider is interactive.** Run `tp providers`:
 
-```bash
-export GROQ_API_KEY=...
-tp -m groq/llama-3.3-70b-versatile "explain this repo"   # no setup needed
-tp providers presets                                    # all presets + key status
-tp providers add groq                                   # save it (live-tested)
-tp providers add work-ai --preset openai --api-key-env WORK_OPENAI_KEY
-tp providers add vllm --type openai-compatible --base-url http://gpu-box:8000/v1
-tp providers discover --save                            # Thinai: Server tab → Start → Share on local network
-tp models use groq/llama-3.3-70b-versatile
-tp config set fallback_models "[openai/gpt-5]"
 ```
+Providers
+❯ Anthropic  ✔ added · key in macOS Keychain · default: claude-opus-5-5 · 13 models
+  OpenAI     not added
+  Ollama     coming next — local models on this machine
+  Thinai     coming next — auto-discovers your phone
+↑/↓ move · enter select · q quit
+```
+
+- **Not added → Enter:** paste the API key (masked). tp checks it with one call to the provider's models endpoint. That call both validates the key and fetches the model list, which is cached. You then pick a default model.
+- **Added → Enter:** choose default model, refresh models, test connection, replace API key, or remove (which deletes the stored key).
+- Keys are stored in the macOS Keychain (on Linux, the Secret Service via `secret-tool`, falling back to a 0600 file). An exported `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` still works and takes priority.
+- When piped, `tp providers` prints a plain list. `tp providers add anthropic` jumps straight to the key prompt.
+- Custom OpenAI-compatible endpoint: `tp providers add vllm --type openai-compatible --base-url http://gpu-box:8000/v1`.
 
 Each model has a **tool mode**. Large models use native tool calling. Small local models default to `text` mode: tools are described in the prompt and calls are parsed from `<tool_call>` blocks. Override per model with `providers.<name>.models.<id>.tools: native|text`.
 
@@ -99,7 +102,7 @@ Reliability: transient errors (429, 5xx, timeouts) are retried with backoff and 
 
 ## Security model
 
-- **Credentials live in environment variables only.** tp never stores them. They are masked in output, redacted from sessions and logs, and **removed from the environment of commands the agent runs**.
+- **Keys you paste go to the OS keychain**, never into config files. Keys from the keychain or env vars are masked in output, redacted from sessions and logs, and **never passed to commands the agent runs**.
 - **Secrets files are off-limits.** The agent cannot read, write, list or grep `.env*`, keys, certificates, cloud credential files or `*.tfstate`.
 - `git commit` is blocked if staged files or diffs look like they contain credentials.
 - Paths are confined to the project root, and symlink escapes are rejected.

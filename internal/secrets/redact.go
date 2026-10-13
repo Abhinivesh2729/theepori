@@ -39,6 +39,16 @@ func New(envVars ...string) *Redactor {
 	return r
 }
 
+// Add masks extra literal values (e.g. keys from the keychain).
+func (r *Redactor) Add(values ...string) {
+	for _, v := range values {
+		if len(v) >= 8 {
+			r.values = append(r.values, v)
+		}
+	}
+	sort.Slice(r.values, func(i, j int) bool { return len(r.values[i]) > len(r.values[j]) })
+}
+
 func (r *Redactor) Redact(s string) string {
 	if r == nil || s == "" {
 		return s

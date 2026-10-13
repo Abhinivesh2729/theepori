@@ -3,6 +3,7 @@ package providers
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/Abhinivesh2729/theepori/internal/config"
 	"github.com/Abhinivesh2729/theepori/internal/llm"
@@ -14,22 +15,30 @@ import (
 // Build constructs the named provider. Missing credentials are an
 // actionable error, not a late HTTP 401.
 func Build(cfg *config.Loaded, name string) (llm.Provider, error) {
+	return BuildWithKey(cfg, name, "")
+}
+
+// BuildWithKey is Build with an explicit key (used to validate a key before
+// it is saved). An empty key means "resolve as usual".
+func BuildWithKey(cfg *config.Loaded, name, key string) (llm.Provider, error) {
 	p, ok := cfg.Provider(name)
 	if !ok {
 		return nil, &llm.Error{Provider: name, Kind: llm.ErrConfig, Message: "unknown provider",
-			Hint: "see `tp providers presets`, or add a custom one: tp providers add " + name + " --type openai-compatible --base-url ..."}
+			Hint: "run `tp providers` to add one, or a custom endpoint: tp providers add " + name + " --type openai-compatible --base-url ..."}
 	}
-	key := p.APIKey()
+	if key == "" {
+		key = p.APIKey()
+	}
 	if p.NeedsKey() && key == "" {
-		hint := fmt.Sprintf("export %s=... (see `tp auth`)", p.APIKeyEnv)
+		hint := fmt.Sprintf("run `tp providers` to add your key, or export %s=...", p.APIKeyEnv)
 		presetName := cfg.Providers[name].Preset
 		if presetName == "" {
 			presetName = name
 		}
 		if pr, ok := config.LookupPreset(presetName); ok && pr.KeyURL != "" {
-			hint = fmt.Sprintf("get a key at %s, then: export %s=...", pr.KeyURL, p.APIKeyEnv)
+			hint = fmt.Sprintf("run `tp providers` and paste a key from %s", pr.KeyURL)
 		}
-		return nil, &llm.Error{Provider: name, Kind: llm.ErrAuth, Message: fmt.Sprintf("environment variable %s is not set", p.APIKeyEnv), Hint: hint}
+		return nil, &llm.Error{Provider: name, Kind: llm.ErrAuth, Message: "no API key", Hint: hint}
 	}
 	switch p.Type {
 	case "anthropic":
@@ -108,6 +117,19 @@ func KeyEnvVars(cfg *config.Loaded) []string {
 	// Preset keys are protected too, even when unused.
 	for _, pr := range config.Presets() {
 		add(pr.APIKeyEnv)
+	}
+	return out
+}
+
+// StoredKeys returns key values held in the credential store, so they can
+// be redacted like env-var keys.
+func StoredKeys(cfg *config.Loaded) []string {
+	var out []string
+	for _, name := range cfg.UsableNames() {
+		p, _ := cfg.Provider(name)
+		if src := p.KeySource(); src != "" && !strings.HasPrefix(src, "$") {
+			out = append(out, p.APIKey())
+		}
 	}
 	return out
 }

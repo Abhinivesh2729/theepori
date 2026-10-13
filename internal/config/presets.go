@@ -23,25 +23,13 @@ type Preset struct {
 var presets = []Preset{
 	{Name: "anthropic", Type: "anthropic", APIKeyEnv: "ANTHROPIC_API_KEY", DefaultModel: "claude-opus-5-5", KeyURL: "https://console.anthropic.com/settings/keys"},
 	{Name: "openai", Type: "openai", BaseURL: "https://api.openai.com/v1", APIKeyEnv: "OPENAI_API_KEY", DefaultModel: "gpt-5", KeyURL: "https://platform.openai.com/api-keys"},
-	{Name: "gemini", Type: "openai-compatible", BaseURL: "https://generativelanguage.googleapis.com/v1beta/openai", APIKeyEnv: "GEMINI_API_KEY", KeyURL: "https://aistudio.google.com/apikey"},
-	{Name: "groq", Type: "openai-compatible", BaseURL: "https://api.groq.com/openai/v1", APIKeyEnv: "GROQ_API_KEY", DefaultModel: "llama-3.3-70b-versatile", KeyURL: "https://console.groq.com/keys"},
-	{Name: "openrouter", Type: "openai-compatible", BaseURL: "https://openrouter.ai/api/v1", APIKeyEnv: "OPENROUTER_API_KEY", KeyURL: "https://openrouter.ai/keys"},
-	{Name: "deepseek", Type: "openai-compatible", BaseURL: "https://api.deepseek.com/v1", APIKeyEnv: "DEEPSEEK_API_KEY", DefaultModel: "deepseek-chat", KeyURL: "https://platform.deepseek.com/api_keys"},
-	{Name: "mistral", Type: "openai-compatible", BaseURL: "https://api.mistral.ai/v1", APIKeyEnv: "MISTRAL_API_KEY", DefaultModel: "mistral-large-latest", KeyURL: "https://console.mistral.ai/api-keys"},
-	{Name: "xai", Type: "openai-compatible", BaseURL: "https://api.x.ai/v1", APIKeyEnv: "XAI_API_KEY", KeyURL: "https://console.x.ai"},
-	{Name: "together", Type: "openai-compatible", BaseURL: "https://api.together.xyz/v1", APIKeyEnv: "TOGETHER_API_KEY", KeyURL: "https://api.together.ai/settings/api-keys"},
-	{Name: "fireworks", Type: "openai-compatible", BaseURL: "https://api.fireworks.ai/inference/v1", APIKeyEnv: "FIREWORKS_API_KEY", KeyURL: "https://fireworks.ai/account/api-keys"},
-	{Name: "cerebras", Type: "openai-compatible", BaseURL: "https://api.cerebras.ai/v1", APIKeyEnv: "CEREBRAS_API_KEY", KeyURL: "https://cloud.cerebras.ai"},
-	{Name: "thinai", Type: "thinai", APIKeyEnv: "THINAI_API_KEY", DefaultModel: "loaded", Local: true},
 	{Name: "ollama", Type: "ollama", BaseURL: "http://localhost:11434", DefaultModel: "loaded", Local: true},
-	{Name: "lmstudio", Type: "openai-compatible", BaseURL: "http://localhost:1234/v1", Local: true},
+	{Name: "thinai", Type: "thinai", APIKeyEnv: "THINAI_API_KEY", DefaultModel: "loaded", Local: true},
 }
 
-// Presets returns all presets sorted by name.
+// Presets returns all presets.
 func Presets() []Preset {
-	out := append([]Preset(nil), presets...)
-	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
-	return out
+	return append([]Preset(nil), presets...) // display order: hosted first, then local
 }
 
 func LookupPreset(name string) (Preset, bool) {
@@ -53,7 +41,7 @@ func LookupPreset(name string) (Preset, bool) {
 	return Preset{}, false
 }
 
-// KeySet reports whether the preset's key is present in the environment.
+// KeySet reports whether the preset's key is exported in the environment.
 func (p Preset) KeySet() bool {
 	return p.APIKeyEnv != "" && strings.TrimSpace(os.Getenv(p.APIKeyEnv)) != ""
 }
@@ -80,6 +68,7 @@ func (l *Loaded) Provider(name string) (Provider, bool) {
 	if presetName == "" {
 		presetName = name
 	}
+	p.Name = name
 	if pr, ok := LookupPreset(presetName); ok {
 		return p.fill(pr), true
 	}

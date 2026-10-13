@@ -12,6 +12,7 @@ func setup(t *testing.T, global, project string) (*Loaded, error) {
 	home := t.TempDir()
 	t.Setenv("TP_HOME", home)
 	t.Setenv("TP_MODEL", "")
+	t.Setenv("TP_CREDENTIAL_STORE", "file")
 	t.Setenv("ANTHROPIC_API_KEY", "")
 	t.Setenv("OPENAI_API_KEY", "")
 	root := t.TempDir()
@@ -117,27 +118,44 @@ func TestSetPreservesComments(t *testing.T) {
 }
 
 func TestPresetsWorkWithoutConfig(t *testing.T) {
-	l, err := setup(t, "default_model: groq/llama-3.3-70b-versatile\n", "")
+	l, err := setup(t, "default_model: ollama/llama3.2\n", "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	p, info, err := l.Model("groq/llama-3.3-70b-versatile")
-	if err != nil || p.Type != "openai-compatible" || p.BaseURL != "https://api.groq.com/openai/v1" || p.APIKeyEnv != "GROQ_API_KEY" {
+	p, _, err := l.Model("ollama/llama3.2")
+	if err != nil || p.Type != "ollama" || p.BaseURL != "http://localhost:11434" || p.NeedsKey() {
 		t.Fatalf("p=%+v err=%v", p, err)
 	}
-	if info.Tools != "native" || !p.NeedsKey() {
-		t.Fatalf("info=%+v needsKey=%v", info, p.NeedsKey())
+	if _, ok := l.Provider("groq"); ok {
+		t.Fatal("only anthropic, openai, ollama and thinai are presets")
 	}
-	if lm, _ := l.Provider("lmstudio"); lm.NeedsKey() {
-		t.Fatal("local presets need no key")
-	}
-	if _, ok := l.Provider("nope"); ok {
-		t.Fatal("unknown provider resolved")
-	}
-	t.Setenv("DEEPSEEK_API_KEY", "x")
-	names := strings.Join(l.UsableNames(), ",")
-	if !strings.Contains(names, "deepseek") || strings.Contains(names, "groq") || strings.Contains(names, "lmstudio") {
+	if names := strings.Join(l.UsableNames(), ","); names != "anthropic,openai,thinai" {
 		t.Fatalf("usable = %s", names)
+	}
+}
+
+func TestStoredKeyAndPrecedence(t *testing.T) {
+	l, _ := setup(t, "", "")
+	p, _ := l.Provider("anthropic")
+	if p.APIKey() != "" || p.KeySource() != "" {
+		t.Fatal("no key expected")
+	}
+	if err := Credentials().Set("anthropic", "sk-ant-stored"); err != nil {
+		t.Fatal(err)
+	}
+	if p.APIKey() != "sk-ant-stored" || p.KeySource() != "tp credentials file" {
+		t.Fatalf("stored key: %q from %q", p.APIKey(), p.KeySource())
+	}
+	if l.ResolveDefaultModel() != "anthropic/claude-opus-5-5" {
+		t.Fatal("stored key should make anthropic the default")
+	}
+	t.Setenv("ANTHROPIC_API_KEY", "sk-ant-env")
+	if p.APIKey() != "sk-ant-env" || p.KeySource() != "$ANTHROPIC_API_KEY" {
+		t.Fatal("env var must win over the stored key")
+	}
+	info, _ := os.Stat(filepath.Join(os.Getenv("TP_HOME"), "credentials.json"))
+	if info.Mode().Perm() != 0o600 {
+		t.Fatalf("credentials file mode %v", info.Mode().Perm())
 	}
 }
 
@@ -146,19 +164,19 @@ func TestPresetFieldAndOverrides(t *testing.T) {
   work-ai:
     preset: openai
     api_key_env: WORK_OPENAI_KEY
-  groq:
-    base_url: https://proxy.example/v1
+  ollama:
+    base_url: http://gpu-box:11434
 `, "")
 	if err != nil {
 		t.Fatal(err)
 	}
 	w, _ := l.Provider("work-ai")
-	if w.Type != "openai" || w.BaseURL != "https://api.openai.com/v1" || w.APIKeyEnv != "WORK_OPENAI_KEY" {
+	if w.Type != "openai" || w.BaseURL != "https://api.openai.com/v1" || w.APIKeyEnv != "WORK_OPENAI_KEY" || w.Name != "work-ai" {
 		t.Fatalf("work-ai = %+v", w)
 	}
-	g, _ := l.Provider("groq")
-	if g.BaseURL != "https://proxy.example/v1" || g.APIKeyEnv != "GROQ_API_KEY" || g.Type != "openai-compatible" {
-		t.Fatalf("groq = %+v", g)
+	o, _ := l.Provider("ollama")
+	if o.BaseURL != "http://gpu-box:11434" || o.Type != "ollama" {
+		t.Fatalf("ollama = %+v", o)
 	}
 	if _, err := setup(t, "providers:\n  x:\n    preset: nonexistent\n", ""); err == nil || !strings.Contains(err.Error(), "preset") {
 		t.Fatalf("unknown preset: %v", err)

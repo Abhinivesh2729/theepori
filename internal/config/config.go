@@ -16,10 +16,12 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/Abhinivesh2729/theepori/internal/credentials"
 	"github.com/Abhinivesh2729/theepori/internal/llm"
 )
 
@@ -34,6 +36,7 @@ type Config struct {
 }
 
 type Provider struct {
+	Name            string                   `yaml:"-"`                // set by Loaded.Provider
 	Preset          string                   `yaml:"preset,omitempty"` // fill unset fields from this preset
 	Type            string                   `yaml:"type,omitempty"`
 	BaseURL         string                   `yaml:"base_url,omitempty"`
@@ -331,12 +334,50 @@ func (l *Loaded) ProviderNames() []string {
 	return names
 }
 
-// APIKey resolves a provider's key from its env var.
+// APIKey resolves a provider's key: its env var first, then the credential
+// store (Keychain etc.) where `tp providers` saves pasted keys.
 func (p Provider) APIKey() string {
-	if p.APIKeyEnv == "" {
-		return ""
+	if p.APIKeyEnv != "" {
+		if v := strings.TrimSpace(os.Getenv(p.APIKeyEnv)); v != "" {
+			return v
+		}
 	}
-	return strings.TrimSpace(os.Getenv(p.APIKeyEnv))
+	if p.Name != "" && p.NeedsKey() {
+		if v, err := Credentials().Get(p.Name); err == nil {
+			return v
+		}
+	}
+	return ""
+}
+
+// KeySource says where APIKey came from ("" when there is no key).
+func (p Provider) KeySource() string {
+	if p.APIKeyEnv != "" && strings.TrimSpace(os.Getenv(p.APIKeyEnv)) != "" {
+		return "$" + p.APIKeyEnv
+	}
+	if p.Name != "" && p.NeedsKey() {
+		if _, err := Credentials().Get(p.Name); err == nil {
+			return Credentials().Name()
+		}
+	}
+	return ""
+}
+
+var (
+	credMu    sync.Mutex
+	credStore credentials.Store
+	credKey   string
+)
+
+// Credentials returns the key store for the current app dir.
+func Credentials() credentials.Store {
+	credMu.Lock()
+	defer credMu.Unlock()
+	k := AppDir() + "|" + os.Getenv("TP_CREDENTIAL_STORE")
+	if credStore == nil || credKey != k {
+		credStore, credKey = credentials.Open(AppDir()), k
+	}
+	return credStore
 }
 
 // NeedsKey reports whether the provider requires an API key. Compatible
@@ -357,11 +398,11 @@ func (l *Loaded) ResolveDefaultModel() string {
 		return l.DefaultModel
 	}
 	for _, name := range []string{"anthropic", "openai"} {
-		if p, ok := l.Providers[name]; ok && p.APIKey() != "" {
+		if p, ok := l.Provider(name); ok && p.APIKey() != "" {
 			return name + "/" + llm.DefaultModelFor(p.Type)
 		}
 	}
-	if p, ok := l.Providers["thinai"]; ok && p.BaseURL != "" {
+	if p, ok := l.Provider("thinai"); ok && p.BaseURL != "" {
 		return "thinai/loaded"
 	}
 	return ""

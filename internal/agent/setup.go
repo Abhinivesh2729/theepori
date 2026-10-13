@@ -94,6 +94,7 @@ func New(opts Options) (*Agent, error) {
 	}
 
 	redact := secrets.New(providers.KeyEnvVars(cfg)...)
+	redact.Add(providers.StoredKeys(cfg)...)
 	testCmd := cfg.TestCommand
 	if testCmd == "" {
 		testCmd = workspace.DetectTestCommand(p.WS.Root)

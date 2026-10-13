@@ -25,6 +25,7 @@ import (
 	"github.com/Abhinivesh2729/theepori/internal/secrets"
 	"github.com/Abhinivesh2729/theepori/internal/session"
 	"github.com/Abhinivesh2729/theepori/internal/tools"
+	"github.com/Abhinivesh2729/theepori/internal/tui"
 	"github.com/Abhinivesh2729/theepori/internal/ui"
 	"github.com/Abhinivesh2729/theepori/internal/workspace"
 )
@@ -273,7 +274,18 @@ func providersCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "providers",
 		Short: "List and manage LLM providers",
-		RunE:  func(*cobra.Command, []string) error { return listProviders() },
+		Long: `In a terminal, tp providers opens an interactive picker: use ↑/↓ to choose
+Anthropic or OpenAI, paste your API key (it is checked and stored in your
+system keychain), and pick a default model. Select an added provider to
+change its default model, refresh models, test, replace the key or remove it.
+
+When piped or scripted, it prints the provider list instead.`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if tui.Available() {
+				return providersInteractive(cmd.Context())
+			}
+			return listProviders()
+		},
 	}
 	var typ, base, keyEnv, preset string
 	var noTest bool
@@ -290,9 +302,28 @@ See all presets: tp providers presets`,
   tp providers add work-ai --preset openai --api-key-env WORK_OPENAI_KEY
   tp providers add local --type openai-compatible --base-url http://localhost:8000/v1
   tp providers add phone --type thinai --base-url 192.168.1.36`,
-		Args: cobra.ExactArgs(1),
+		Args: cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				if tui.Available() {
+					return providersInteractive(cmd.Context())
+				}
+				return errors.New("usage: tp providers add <preset> (anthropic, openai, ollama, thinai) or --type for a custom endpoint")
+			}
 			name := args[0]
+			if pr, ok := config.LookupPreset(name); ok && typ == "" && preset == "" && base == "" && keyEnv == "" && tui.Available() && comingNext[name] == "" {
+				p, err := agent.LoadProject(cwd())
+				if p == nil {
+					return err
+				}
+				if prov, _ := p.Cfg.Provider(name); prov.KeySource() == "" {
+					err := addProviderFlow(cmd.Context(), tui.New(), p.Cfg, pr)
+					if errors.Is(err, tui.ErrCanceled) {
+						return nil
+					}
+					return err
+				}
+			}
 			if preset == "" && typ == "" {
 				if _, ok := config.LookupPreset(name); ok {
 					preset = name
@@ -476,11 +507,11 @@ func listProviders() error {
 	for _, name := range p.Cfg.UsableNames() {
 		pr, _ := p.Cfg.Provider(name)
 		cred := c.Dim("no key needed")
-		switch {
-		case pr.APIKeyEnv != "" && pr.APIKey() != "":
-			cred = c.Green("✔ " + pr.APIKeyEnv)
+		switch src := pr.KeySource(); {
+		case src != "":
+			cred = c.Green("✔ key in " + src)
 		case pr.NeedsKey():
-			cred = c.Red("✗ " + pr.APIKeyEnv + " not set")
+			cred = c.Red("✗ no key — run tp providers")
 		}
 		base := pr.BaseURL
 		if base == "" {
@@ -610,8 +641,11 @@ func listModels(ctx context.Context, c *ui.Console, cfg *config.Loaded, remote b
 		if ctype == "openai-compatible" {
 			ctype = "openai"
 		}
+		cache, cached := config.CachedModels(name)
 		live := remote || pr.Type == "thinai" || pr.Type == "ollama" || pr.Type == "openai-compatible"
-		if live {
+		if cached && !remote && !live {
+			models = cache.Models
+		} else if live {
 			if prov, err := providers.Build(cfg, name); err == nil {
 				lctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 				models, err = prov.ListModels(lctx)
@@ -619,6 +653,9 @@ func listModels(ctx context.Context, c *ui.Console, cfg *config.Loaded, remote b
 				if err != nil {
 					c.Printf("%s %s\n", c.Bold(name), c.Red(clipLine(err.Error(), 120)))
 					continue
+				}
+				if pr.Type == "anthropic" || pr.Type == "openai" {
+					_ = config.SaveModels(name, models)
 				}
 			} else {
 				c.Printf("%s %s\n", c.Bold(name), c.Dim(clipLine(err.Error(), 120)))
@@ -883,11 +920,11 @@ func toolsCmd() *cobra.Command {
 func authCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "auth",
-		Short: "Show credential status (keys are read from environment variables only)",
-		Long: `tp never stores API keys. Each provider reads its key from the environment
-variable named by providers.<name>.api_key_env. Keys are masked in output,
-redacted from logs/sessions, and removed from the environment of commands the
-agent runs.`,
+		Short: "Show where each provider's API key comes from",
+		Long: `Keys come from an exported env var (e.g. ANTHROPIC_API_KEY, which wins) or
+from the system keychain, where "tp providers" saves keys you paste. Keys are
+masked in output, redacted from logs/sessions, and never passed to commands
+the agent runs.`,
 		RunE: func(*cobra.Command, []string) error {
 			p, err := agent.LoadProject(cwd())
 			if p == nil {
@@ -897,20 +934,18 @@ agent runs.`,
 			missing := false
 			for _, name := range p.Cfg.UsableNames() {
 				pr, _ := p.Cfg.Provider(name)
-				switch {
-				case pr.APIKeyEnv == "":
-					c.Printf("  %-12s %s\n", name, c.Dim("no credential configured"))
-				case pr.APIKey() != "":
-					c.Printf("  %-12s %s %s\n", name, c.Green("✔ "+pr.APIKeyEnv), c.Dim(secrets.Mask(pr.APIKey())))
+				switch src := pr.KeySource(); {
+				case src != "":
+					c.Printf("  %-12s %s %s\n", name, c.Green("✔ key in "+src), c.Dim(secrets.Mask(pr.APIKey())))
 				case pr.NeedsKey():
 					missing = true
-					c.Printf("  %-12s %s\n", name, c.Red("✗ "+pr.APIKeyEnv+" not set"))
+					c.Printf("  %-12s %s\n", name, c.Red("✗ no key"))
 				default:
-					c.Printf("  %-12s %s\n", name, c.Dim(pr.APIKeyEnv+" not set (optional)"))
+					c.Printf("  %-12s %s\n", name, c.Dim("no key needed"))
 				}
 			}
 			if missing {
-				c.Printf("\n%s\n", c.Dim("set keys in your shell profile (~/.zshrc), e.g.:\n  export ANTHROPIC_API_KEY=sk-ant-...\nthen verify with: tp auth check"))
+				c.Printf("\n%s\n", c.Dim("add a key: tp providers   (or export ANTHROPIC_API_KEY / OPENAI_API_KEY)"))
 			}
 			return err
 		},

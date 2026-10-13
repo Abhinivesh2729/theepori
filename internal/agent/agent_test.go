@@ -97,6 +97,7 @@ func repo(t *testing.T) string {
 	t.Setenv("TP_HOME", t.TempDir())
 	t.Setenv("ANTHROPIC_API_KEY", "sk-ant-test-dummy-key-0000000000")
 	t.Setenv("TP_MODEL", "")
+	t.Setenv("TP_CREDENTIAL_STORE", "file")
 	dir := t.TempDir()
 	dir, _ = filepath.EvalSymlinks(dir)
 	os.WriteFile(filepath.Join(dir, "calc.sh"), []byte("add() { echo $(( $1 + $2 )); }\n"), 0o644)
