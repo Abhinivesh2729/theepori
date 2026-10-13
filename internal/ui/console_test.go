@@ -39,3 +39,18 @@ func TestApproveRepromptsOnSlashCommand(t *testing.T) {
 		t.Fatal("destructive needs a typed yes")
 	}
 }
+
+func TestTamilClusters(t *testing.T) {
+	got := strings.Join(Clusters("தீப்பொறி"), "|")
+	if got != "தீ|ப்|பொ|றி" {
+		t.Fatalf("clusters = %s", got)
+	}
+}
+
+func TestLogoPlainWithoutColor(t *testing.T) {
+	c := &Console{Color: false}
+	logo := c.Logo("v1")
+	if strings.Contains(logo, "\x1b[") || !strings.Contains(logo, "தீப்பொறி") || strings.Count(logo, "\n") != len(flame) {
+		t.Fatalf("logo:\n%s", logo)
+	}
+}

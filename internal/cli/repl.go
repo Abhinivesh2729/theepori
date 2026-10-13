@@ -25,6 +25,7 @@ type repl struct {
 func runInteractive(ctx context.Context, model, mode, resume string) error {
 	con := ui.NewConsole(true)
 	con.StartInput(os.Stdin)
+	con.Printf("\n%s\n", con.Logo(Version))
 	a, err := newAgent(con, model, mode, resume)
 	if err != nil {
 		if a == nil {
@@ -50,7 +51,6 @@ func (r *repl) banner() {
 	if b := a.WS.Branch(); b != "" {
 		branch = " (" + b + ")"
 	}
-	c.Printf("%s %s\n", c.Bold("தீப்பொறி tp"), c.Dim(Version))
 	c.Printf("%s%s · %s · mode %s\n", root, branch, c.Cyan(orNone(a.Session.Model)), c.Yellow(a.Perms.Mode()))
 	for _, w := range a.Cfg.Warnings {
 		c.Printf("%s\n", c.Yellow("! "+w))

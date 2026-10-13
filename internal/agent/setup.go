@@ -140,7 +140,7 @@ func New(opts Options) (*Agent, error) {
 type noModelError struct{}
 
 func (noModelError) Error() string {
-	return "no model available: set ANTHROPIC_API_KEY or OPENAI_API_KEY, configure Thinai (`tp providers discover`), or run `tp models use <provider/model>`"
+	return "no model available: run `tp providers` to add Anthropic or OpenAI (paste your API key)"
 }
 
 // SetMode changes the permission mode for the session.
