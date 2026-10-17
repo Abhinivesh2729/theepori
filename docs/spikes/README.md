@@ -8,7 +8,7 @@ Run 2026-10-17 on macOS (Darwin 24.6), Claude Code 2.1.294, signed in with a cla
 | 2 | A PreToolUse hook from `--settings` denies Bash and MCP calls | **Works, with one required flag** |
 | 3 | The sandbox blocks agent reads of the vault directory | **Works** |
 | 4 | stream-json gives usage for attribution | **Works** |
-| 5 | WebAuthn PRF on iOS Safari and Android Chrome through a Cloudflare tunnel | **Pending: needs your devices** |
+| 5 | WebAuthn PRF through a Cloudflare tunnel | **Works on Android Chrome and macOS Chrome. iOS untested (no iPhone)** |
 | 6 | A Remote Control session can run `/loop` over the tp queue and survive restarts | **Partly: docs say no for self-paced `/loop`; needs a hands-on test** |
 
 ## 1. Atlassian connector in headless and launchd runs: works
@@ -72,14 +72,24 @@ Baseline overhead per run (cache creation on a trivial prompt):
 
 **Design impact:** coding runs use `--strict-mcp-config` plus tp's own MCP config (tp mcp only), and stewards keep connectors but restrict tools. A Jira steward round trip (do + confirm) costs about 2 × $0.008–0.01 with Haiku.
 
-## 5. WebAuthn PRF through a tunnel: pending
+## 5. WebAuthn PRF through a tunnel: works on Chrome (Android, macOS)
 
-Test page ready: [`prf-test/index.html`](prf-test/index.html). Steps:
+Test page: [`prf-test/index.html`](prf-test/index.html), served on 127.0.0.1 through a Cloudflare quick tunnel.
 
-1. `python3 -m http.server 8787 --directory docs/spikes/prf-test` (local only).
-2. `cloudflared tunnel --url http://localhost:8787` (quick tunnel, random `*.trycloudflare.com` host, no account).
-3. On iPhone Safari and Android Chrome: open the link, tap Register, then Authenticate twice. Pass = PRF returns 32 bytes with the same fingerprint both times.
-4. Stop both processes. The test passkey is bound to the random host and is useless afterwards; delete it from the device's password manager.
+| Browser | Register | PRF output | Repeat same secret |
+|---|---|---|---|
+| Android 10, Chrome 154 | ok, `prf.enabled=true` | 32 bytes (at create and at get) | not re-checked |
+| macOS, Chrome 155 | ok, `prf.enabled=true` | 32 bytes (at create and at get) | not re-checked |
+| iOS Safari | not tested: no iPhone available | | |
+
+- PRF output is HMAC-based and deterministic per credential and salt by spec. Stability was not re-checked by hand. M8 has an automated test that unwraps the DEK twice with the same passkey.
+- PRF output is already returned at registration on both browsers, so `tp setup` can create the PRF-keyed DEK wrap in one step.
+- **iOS stays unverified.** Until it is tested, the design must not assume an iPhone can unlock. The cockpit link works on any browser that supports PRF.
+
+**Incident and design impact:** the first `cloudflared tunnel --url …` run silently loaded `~/.cloudflared/config.yml` (the existing Margali named tunnel: `margali.0xabhi.space`, `chat.0xabhi.space`). It joined that tunnel as an extra connector with Margali's own ingress for about 2 minutes, instead of creating a quick tunnel. The test page was never exposed on those hostnames, and the Cloudflare account was not changed. It was stopped and rerun with `--config <empty file>`.
+- tp **always** passes its own `--config` (and its own credentials file) to `cloudflared`, and never relies on `~/.cloudflared/config.yml`.
+- `tp factory doctor` reports other cloudflared tunnels on the machine, so tp never collides with them.
+- The `vault.0xabhi.space` tunnel must be a **separate named tunnel**, not an extra ingress rule on the Margali tunnel, so it can be brought up and down without touching Margali.
 
 ## 6. Remote Control cockpit: partly answered by docs, hands-on test pending
 

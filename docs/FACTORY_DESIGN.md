@@ -180,7 +180,7 @@ side exits: blocked · escalated · rolled_back · cancelled
 - Local-only, encrypted with the ported Panuval key hierarchy. Scopes: `project/environment`. Metadata: version, expiry, rotation status.
 - **Runtime injection only** via the broker (`run_with_secrets`, verification and deploy runners). `.env` materialization only when a tool demands it: 0600, outside git, deleted after the run, never readable by the agent.
 - Access decisions logged without values. Expiry warnings in dashboard and `tp factory doctor`.
-- **Remote UI:** served by the daemon; `tp vault remote` (or the dashboard) brings up a **named Cloudflare Tunnel on a fixed hostname**: `vault.0xabhi.space`, on the same Cloudflare account as `tp.0xabhi.space` (configurable as `remote.hostname` in `factory.yaml`; changing it invalidates registered passkeys), passkey login, short session. The tunnel stops when the session ends, on idle timeout, or at a hard TTL, whichever comes first. Docs state that traffic passes through Cloudflare.
+- **Remote UI:** served by the daemon; `tp vault remote` (or the dashboard) brings up a **named Cloudflare Tunnel on a fixed hostname**: `vault.0xabhi.space`, on the same Cloudflare account as `tp.0xabhi.space` (configurable as `remote.hostname` in `factory.yaml`; changing it invalidates registered passkeys), passkey login, short session. The tunnel stops when the session ends, on idle timeout, or at a hard TTL, whichever comes first. It is its own named tunnel (not an ingress rule on another tunnel), and tp always runs `cloudflared` with its own `--config` (spike 5). Docs state that traffic passes through Cloudflare.
 - The web UI is not a shell: it only exposes vault CRUD, approvals and read-only status.
 
 ### 9.1 Remote unlock (decided 2026-10-17)
@@ -239,4 +239,4 @@ SQLite table of lessons: scope (global / project), category, text, provenance (t
 ## 15. Still open
 1. **Pilot project** (decided later by the founder).
 2. **Where the cockpit's policy lives:** user `~/.claude/settings.json` (applies to all your Claude sessions) or managed settings (machine-wide, needs admin).
-3. **Spikes 5 and 6** need hands-on tests with your devices (docs/spikes/README.md).
+3. **Spike 6** (Remote Control cockpit) needs a hands-on test. Spike 5: PRF works on Android and macOS Chrome; **iOS is untested**.
