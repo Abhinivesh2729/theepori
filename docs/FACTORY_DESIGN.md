@@ -63,7 +63,8 @@ Dropped: `auth` (Google/Firebase), `store/remote.go`, `store/sync.go`, Firebase 
 
 - Claude in the cockpit runs `tp` commands / tp MCP tools (`tp run <task>`, `queue_next`, `task_status`).
 - tp launches the coding work as child `claude -p` runs in worktrees. Children never talk to the human; anything human-facing (unlock links, approvals, blockers, results) comes back through tp to the cockpit, and Claude posts it there.
-- **Intake does not start work by itself.** The daemon polls and **queues** tasks. The cockpit works the queue, either on request or on a self-paced loop (`/loop` work the factory queue) started once by the human.
+- **Intake does not start work by itself.** The daemon polls and **queues** tasks. The cockpit works the queue on request or through a **fixed-interval scheduled task** (self-paced `/loop` is not restored after restarts; recurring tasks expire after 7 days, so tp re-arms them). See docs/spikes/README.md §6.
+- The cockpit's hooks and deny rules cannot come from `--settings` (Remote Control does not forward it). They must come from a settings file: user-level or managed. Open decision.
 - The daemon keeps the cockpit alive: `claude remote-control --continue` under launchd, never a second session for the same factory.
 - **No cockpit, no progress on human-gated steps.** If the session is gone, tasks wait in `awaiting_unlock` / `awaiting_approval`; their links are re-issued (old ones revoked) when a cockpit next asks `task_status`.
 
@@ -121,11 +122,11 @@ The agent never gets a secret value back from any tool.
 
 ## 6. Policy and isolation (enforced outside the LLM)
 
-Per run, tp generates a Claude Code settings file **outside the worktree** and passes it with `--settings`:
+Per run, tp generates a Claude Code settings file **outside the worktree** and passes it with `--settings`, always together with **`--setting-sources user`**. Spike 2 showed that a repo's `.claude/settings.json` with `disableAllHooks: true` silently disables tp's hooks otherwise. Coding runs also use `--strict-mcp-config` with only tp's MCP server (12k instead of 38k baseline tokens). Stewards keep connectors, restrict with `--allowedTools`, and return results through `--json-schema`.
 
 - **PreToolUse hook → `tp hook pre`:** classifies Bash commands (existing classifier), file paths and MCP tool calls against global + project + environment policy. Deny wins. Always denied for agents: `tp vault *`, `security *` (keychain), reads of `~/factory/vault`, `~/factory/state.db`, the settings file itself, `.env*`.
 - **PostToolUse hook → `tp hook post`:** writes the audit event.
-- **Sandbox:** filesystem limited to the worktree (+ toolchain caches); `~/factory` denied except the task's evidence directory; network allow-list per project.
+- **Sandbox** (Bash only; file tools need the `permissions.deny` rules too). `gh` must be in `sandbox.excludedCommands` (Go TLS fails inside the macOS sandbox), so for stewards the hook allow-list is the only control on `gh`. Sandbox scope: filesystem limited to the worktree (+ toolchain caches); `~/factory` denied except the task's evidence directory; network allow-list per project.
 - Project config and repo files may only **tighten** policy. Policy changes are audited events with the actor.
 
 ### Risk classification (deterministic)
@@ -237,3 +238,5 @@ SQLite table of lessons: scope (global / project), category, text, provenance (t
 
 ## 15. Still open
 1. **Pilot project** (decided later by the founder).
+2. **Where the cockpit's policy lives:** user `~/.claude/settings.json` (applies to all your Claude sessions) or managed settings (machine-wide, needs admin).
+3. **Spikes 5 and 6** need hands-on tests with your devices (docs/spikes/README.md).

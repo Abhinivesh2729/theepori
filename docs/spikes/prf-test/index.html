@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tp PRF spike</title>
+<style>
+  :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+  body { margin: 0; padding: 16px; max-width: 560px; }
+  button { font-size: 1rem; padding: 12px 16px; margin: 6px 0; width: 100%; }
+  pre { white-space: pre-wrap; word-break: break-all; background: rgba(127,127,127,.12); padding: 12px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<h1>tp passkey PRF spike</h1>
+<p>Throwaway test. Registers a test passkey for this hostname only, then checks that the WebAuthn PRF extension returns a stable 32-byte secret. No data leaves this page.</p>
+<button id="reg">1. Register test passkey</button>
+<button id="auth">2. Authenticate and derive PRF secret</button>
+<pre id="log">Browser: <span id="ua"></span></pre>
+<script>
+const log = (m) => { document.getElementById('log').textContent += '\n' + m; };
+document.getElementById('ua').textContent = navigator.userAgent;
+const salt = new TextEncoder().encode('tp-vault-prf-spike-v1').buffer;
+const rand = (n) => crypto.getRandomValues(new Uint8Array(n));
+const hex = (buf) => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+let credId = null;
+
+document.getElementById('reg').onclick = async () => {
+  try {
+    const cred = await navigator.credentials.create({ publicKey: {
+      rp: { name: 'tp PRF spike', id: location.hostname },
+      user: { id: rand(16), name: 'tp-spike', displayName: 'tp spike' },
+      challenge: rand(32),
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+      extensions: { prf: { eval: { first: salt } } },
+    }});
+    credId = cred.rawId;
+    const ext = cred.getClientExtensionResults();
+    log('register: ok, prf.enabled=' + (ext.prf && ext.prf.enabled) +
+        (ext.prf && ext.prf.results ? ', prf output at create: ' + ext.prf.results.first.byteLength + ' bytes' : ''));
+  } catch (e) { log('register: FAILED ' + e.name + ': ' + e.message); }
+};
+
+document.getElementById('auth').onclick = async () => {
+  try {
+    const opts = { challenge: rand(32), rpId: location.hostname, userVerification: 'required',
+      extensions: { prf: { eval: { first: salt } } } };
+    if (credId) opts.allowCredentials = [{ type: 'public-key', id: credId }];
+    const a = await navigator.credentials.get({ publicKey: opts });
+    const r = a.getClientExtensionResults().prf;
+    if (r && r.results && r.results.first) {
+      const out = r.results.first;
+      log('auth: ok, PRF ' + out.byteLength + ' bytes, fingerprint ' + hex(await crypto.subtle.digest('SHA-256', out)).slice(0, 16) +
+          ' (run again: same fingerprint = stable secret)');
+    } else {
+      log('auth: ok but NO PRF output. PRF unsupported here.');
+    }
+  } catch (e) { log('auth: FAILED ' + e.name + ': ' + e.message); }
+};
+</script>
+</body>
+</html>
