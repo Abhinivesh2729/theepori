@@ -239,4 +239,4 @@ SQLite table of lessons: scope (global / project), category, text, provenance (t
 ## 15. Still open
 1. **Pilot project** (decided later by the founder).
 2. **Where the cockpit's policy lives:** user `~/.claude/settings.json` (applies to all your Claude sessions) or managed settings (machine-wide, needs admin).
-3. **Spike 6** (Remote Control cockpit) needs a hands-on test. Spike 5: PRF works on Android and macOS Chrome; **iOS is untested**.
+3. Spike 6 (Remote Control cockpit) answered from docs only; its checks are M8 acceptance tests. Spike 5: PRF works on Android and macOS Chrome; **iOS is untested**.

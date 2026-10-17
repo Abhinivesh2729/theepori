@@ -9,7 +9,7 @@ Run 2026-10-17 on macOS (Darwin 24.6), Claude Code 2.1.294, signed in with a cla
 | 3 | The sandbox blocks agent reads of the vault directory | **Works** |
 | 4 | stream-json gives usage for attribution | **Works** |
 | 5 | WebAuthn PRF through a Cloudflare tunnel | **Works on Android Chrome and macOS Chrome. iOS untested (no iPhone)** |
-| 6 | A Remote Control session can run `/loop` over the tp queue and survive restarts | **Partly: docs say no for self-paced `/loop`; needs a hands-on test** |
+| 6 | A Remote Control session can run `/loop` over the tp queue and survive restarts | **Docs only. Self-paced `/loop` not restored; hands-on test skipped, moved into M8** |
 
 ## 1. Atlassian connector in headless and launchd runs: works
 
@@ -91,7 +91,7 @@ Test page: [`prf-test/index.html`](prf-test/index.html), served on 127.0.0.1 thr
 - `tp factory doctor` reports other cloudflared tunnels on the machine, so tp never collides with them.
 - The `vault.0xabhi.space` tunnel must be a **separate named tunnel**, not an extra ingress rule on the Margali tunnel, so it can be brought up and down without touching Margali.
 
-## 6. Remote Control cockpit: partly answered by docs, hands-on test pending
+## 6. Remote Control cockpit: answered from docs; hands-on test moved into M8
 
 What the docs say (`claude remote-control`, scheduled tasks, channels):
 
@@ -104,7 +104,9 @@ What the docs say (`claude remote-control`, scheduled tasks, channels):
 | Unattended start | Not documented as supported. The first run asks `Enable Remote Control? (y/n)`, and an untrusted directory with no TTY exits. The server exits after ~10 min without network | `tp setup` does the first run interactively in `~/factory` (accept + trust), then hands it to launchd with `KeepAlive`. |
 | Push into a running session | **Channels** (research preview): an MCP server sends `notifications/claude/channel` into a session started with `--channels`. Sender allow-list; custom channels need allow-listing. Whether this combines with Remote Control is undocumented. Also: `claude --resume <id> "<prompt>"` sends a prompt to a running `--bg` session | Possible upgrade later: tp pushes "new task" and "unlock needed" events into the cockpit instead of the cockpit polling. Not in the core design until tested. |
 
-Hands-on test (needs your phone and claude.ai):
+Observed: `claude remote-control` first asks to trust the folder (`[y/N]`) before anything else, which confirms the one-time interactive setup step.
+
+The hands-on phone test was skipped on 2026-10-17 at the founder's request. These checks become automated acceptance tests in M8:
 1. In `~/factory` (or a scratch dir): `claude remote-control --name tp-cockpit-spike`, accept the prompt, trust the folder.
 2. From the phone: open the session and run `/loop 10m run: date`. Check that it fires.
 3. Stop the server, run `claude remote-control --continue`, and check whether the 10-minute task comes back.
