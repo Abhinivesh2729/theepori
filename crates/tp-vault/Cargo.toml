@@ -1,0 +1,27 @@
+[package]
+name = "tp-vault"
+description = "TP Vault: Rust port of the Panuval secrets vault (Argon2id KEK, AES-256-GCM DEK, per-item AEAD)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+aes-gcm = { version = "0.11.1", default-features = false, features = ["aes", "alloc", "zeroize"] }
+argon2 = { version = "0.6.0", default-features = false, features = ["alloc", "zeroize"] }
+base64 = "0.22.1"
+getrandom = "0.3.4"
+hex = "0.4.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+time = { version = "0.3.55", features = ["serde", "formatting", "parsing"] }
+unicode-normalization = "0.1.26"
+zeroize = { version = "1.9.1", features = ["serde", "zeroize_derive"] }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+tempfile = "3.27.0"
