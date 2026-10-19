@@ -7,3 +7,6 @@ site/public/install.sh
 site/.wrangler/
 .env.*
 !.env.example
+target/
+node_modules/
+apps/desktop/dist/
