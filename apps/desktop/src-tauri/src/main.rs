@@ -65,6 +65,22 @@ async fn audit_tail(sock: State<'_, Socket>, limit: u32) -> Result<Vec<AuditReco
     .await
 }
 
+/// Generic pass-through to any tpd method (see tp-proto `factory::m`).
+#[tauri::command]
+async fn rpc(
+    sock: State<'_, Socket>,
+    method: String,
+    params: Option<Value>,
+) -> Result<Value, String> {
+    let sock = sock.0.clone();
+    on_worker(move || {
+        connect(&sock)?
+            .call_raw(&method, params.unwrap_or(Value::Null))
+            .map_err(|e| e.to_string())
+    })
+    .await
+}
+
 /// Called by the UI after its first paint. With `TP_PERF_OUT` set, writes the
 /// time to usable shell for the perf harness; with `TP_PERF_EXIT=1`, quits.
 #[tauri::command]
@@ -128,6 +144,7 @@ fn main() {
             daemon_status,
             project_list,
             audit_tail,
+            rpc,
             app_ready
         ])
         .setup(move |app| {
