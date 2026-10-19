@@ -7,7 +7,7 @@ Work is tracked in Jira project **SF** (epics SF-1..SF-12 = M0..M11).
 ## 1. Scope and constraints
 
 - **Personal tool.** One founder, one Mac. TP drives the locally installed `claude` CLI under the founder's own claude.ai login. Not sold, no third-party users, no API-key mode.
-- **Target build: this Mac only** (Apple Silicon, macOS / Darwin 24.6). No Linux, Windows or iOS builds or code paths.
+- **Target build: this Mac only**: MacBookPro15,1, Intel Core i7-9750H, 32 GB, macOS 15.7.9 (x86_64). CI runs tests on `macos-latest`. No Linux, Windows or iOS builds or code paths.
 - **Mobile: Flutter, Android only**, reaching the Mac through a relay on the founder's Cloudflare account.
 - Everything in the PRD is in scope; work is sequenced by dependency (§12), not cut.
 
