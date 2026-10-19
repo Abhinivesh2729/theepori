@@ -748,6 +748,12 @@ fn vault_unlocked(e: &Engine) -> bool {
         .unwrap_or(false)
 }
 
+/// RFC 3339 like every other timestamp on the wire (not `time`'s Display form).
+fn rfc3339(t: time::OffsetDateTime) -> String {
+    t.format(&time::format_description::well_known::Rfc3339)
+        .unwrap_or_else(|_| t.to_string())
+}
+
 fn vault_status(e: &Engine) -> tp_core::Result<VaultStatus> {
     let dir = e.paths.vault_dir();
     let initialized = tp_vault::Vault::is_initialized(&dir);
@@ -756,7 +762,7 @@ fn vault_status(e: &Engine) -> tp_core::Result<VaultStatus> {
             Some(h) if h.is_unlocked() => {
                 let st = h.status();
                 let items = h.with_unlocked(|u| u.list(None).len()).unwrap_or(0);
-                (true, st.expires_at.map(|t| t.to_string()), items as u32)
+                (true, st.expires_at.map(rfc3339), items as u32)
             }
             _ => (false, None, 0),
         },
@@ -793,8 +799,8 @@ fn vault_list(e: &Engine, params: &Value) -> tp_core::Result<Vec<VaultItemMeta>>
             environment: i.scope.environment.clone(),
             name: i.name,
             version: i.version as u32,
-            updated_at: i.updated_at.to_string(),
-            expires_at: i.expires_at.map(|t| t.to_string()),
+            updated_at: rfc3339(i.updated_at),
+            expires_at: i.expires_at.map(rfc3339),
             rotation_due: i.rotation_due,
         })
         .collect())
