@@ -1,45 +1,37 @@
-VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo 0.1.0-dev)
-COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
-DATE    ?= $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
-PKG     := github.com/Abhinivesh2729/theepori/internal/cli
-LDFLAGS := -s -w -X $(PKG).Version=$(VERSION) -X $(PKG).Commit=$(COMMIT) -X $(PKG).Date=$(DATE)
-PREFIX  ?= $(HOME)/.local
-
-.PHONY: build test vet install dist clean site site-deploy snapshot
+# Thee Pori software factory (macOS only). See docs/FACTORY_DESIGN.md.
+.PHONY: build test lint desktop perf install-daemon clean site site-deploy
 
 build:
-	go build -ldflags "$(LDFLAGS)" -o bin/tp ./cmd/tp
+	cargo build --release -p tpd -p tp-cli
 
 test:
-	go test ./...
+	cargo test --workspace
 
-vet:
-	go vet ./...
-	@test -z "$$(gofmt -l .)" || (gofmt -l . && echo "run gofmt -w ." && exit 1)
+lint:
+	cargo fmt --all --check
+	cargo clippy --workspace --all-targets -- -D warnings
+	cd apps/desktop && npm run typecheck
 
-install: build
-	install -d $(PREFIX)/bin
-	install -m 0755 bin/tp $(PREFIX)/bin/tp
-	@echo "installed $(PREFIX)/bin/tp"
+desktop:
+	cd apps/desktop && npm ci && npx tauri build
 
-# Cross-compile release binaries for macOS and Linux.
-dist:
-	@mkdir -p dist
-	@for os in darwin linux; do for arch in amd64 arm64; do \
-		echo "building $$os/$$arch"; \
-		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch go build -ldflags "$(LDFLAGS)" -o dist/tp-$$os-$$arch ./cmd/tp || exit 1; \
-	done; done
+perf: build desktop
+	python3 -I scripts/perf.py
+
+# Installs target/release/tp to ~/.local/bin and tpd as a launchd agent.
+install-daemon: build
+	install -d $(HOME)/.local/bin
+	install -m 0755 target/release/tp $(HOME)/.local/bin/tp
+	target/release/tp daemon install --tpd target/release/tpd
 
 clean:
-	rm -rf bin dist
+	cargo clean
+	rm -rf apps/desktop/dist
 
-# Landing page + installer → https://tp.0xabhi.space (Cloudflare Worker, static assets)
+# Landing page + installer -> https://tp.0xabhi.space (Cloudflare Worker, static assets)
 site:
 	cp install.sh site/public/install.sh
 
 site-deploy: site
 	cd site && npx -y wrangler@4 deploy
 
-# Local dry run of the release (no publish)
-snapshot:
-	goreleaser release --snapshot --clean

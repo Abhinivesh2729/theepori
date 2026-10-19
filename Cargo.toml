@@ -1,0 +1,22 @@
+[workspace]
+resolver = "3"
+members = ["crates/tp-core", "crates/tp-proto", "crates/tpd", "crates/tp-cli", "apps/desktop/src-tauri"]
+
+[workspace.package]
+version = "0.2.0-dev"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/Abhinivesh2729/theepori"
+publish = false
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+dbg_macro = "warn"
+unwrap_used = "warn"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
