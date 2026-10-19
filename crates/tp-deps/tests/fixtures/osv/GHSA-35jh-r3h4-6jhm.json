@@ -1,0 +1,52 @@
+{
+  "id": "GHSA-35jh-r3h4-6jhm",
+  "summary": "Command Injection in lodash",
+  "details": "`lodash` versions prior to 4.17.21 are vulnerable to Command Injection via the template function.",
+  "aliases": ["CVE-2021-23337"],
+  "modified": "2024-01-01T00:00:00Z",
+  "published": "2021-05-06T16:05:51Z",
+  "database_specific": {
+    "severity": "HIGH",
+    "cwe_ids": ["CWE-77", "CWE-94"],
+    "github_reviewed": true
+  },
+  "severity": [
+    {
+      "type": "CVSS_V3",
+      "score": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H"
+    }
+  ],
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "lodash",
+        "purl": "pkg:npm/lodash"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            { "introduced": "0" },
+            { "fixed": "4.17.21" }
+          ]
+        }
+      ]
+    },
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "lodash-es"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            { "introduced": "0" },
+            { "fixed": "4.17.99" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -11,3 +11,5 @@ target/
 node_modules/
 apps/desktop/dist/
 apps/desktop/src-tauri/gen/
+.claude/worktrees/
+apps/desktop/src-tauri/binaries/

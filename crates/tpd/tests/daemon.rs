@@ -109,7 +109,12 @@ fn status_projects_audit_and_shutdown() {
     assert!(err.contains("UnknownMethod"), "{err}");
 
     let tail: Vec<AuditRecord> = c.call(method::AUDIT_TAIL, json!({"limit": 10})).unwrap();
-    let actions: Vec<_> = tail.iter().map(|r| r.action.as_str()).collect();
+    // The scheduler may add its own records (plan, intake); check ours in order.
+    let actions: Vec<_> = tail
+        .iter()
+        .map(|r| r.action.as_str())
+        .filter(|a| !a.starts_with("plan.") && !a.starts_with("intake."))
+        .collect();
     assert_eq!(
         actions,
         ["factory.setup", "daemon.started", "project.added"]
@@ -163,10 +168,21 @@ fn subscribers_receive_audit_events() {
         .call(method::PROJECT_ADD, json!({"repo_path": repo}))
         .unwrap();
 
-    let first = events.next().unwrap().unwrap();
+    let first = events
+        .find(|e| {
+            e.as_ref()
+                .is_ok_and(|e| e.event != "audit.appended" || e.data["action"] == "project.added")
+                && e.as_ref()
+                    .is_ok_and(|e| e.event == "audit.appended" || e.event == "project.added")
+        })
+        .unwrap()
+        .unwrap();
     assert_eq!(first.event, "audit.appended");
     assert_eq!(first.data["action"], "project.added");
-    let second = events.next().unwrap().unwrap();
+    let second = events
+        .find(|e| e.as_ref().is_ok_and(|e| e.event == "project.added"))
+        .unwrap()
+        .unwrap();
     assert_eq!(second.event, "project.added");
     assert_eq!(second.data["slug"], "evt");
     drop(events);

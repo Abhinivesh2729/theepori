@@ -8,7 +8,7 @@ use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
 use serde_json::Value;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use tp_core::client::Client;
 use tp_core::paths::FactoryPaths;
 use tp_proto::{AuditRecord, DaemonStatus, Project, method};
@@ -61,6 +61,51 @@ async fn audit_tail(sock: State<'_, Socket>, limit: u32) -> Result<Vec<AuditReco
         connect(&sock)?
             .call(method::AUDIT_TAIL, serde_json::json!({ "limit": limit }))
             .map_err(|e| e.to_string())
+    })
+    .await
+}
+
+/// Generic pass-through to any tpd method (see tp-proto `factory::m`).
+#[tauri::command]
+async fn rpc(
+    sock: State<'_, Socket>,
+    method: String,
+    params: Option<Value>,
+) -> Result<Value, String> {
+    let sock = sock.0.clone();
+    on_worker(move || {
+        connect(&sock)?
+            .call_raw(&method, params.unwrap_or(Value::Null))
+            .map_err(|e| e.to_string())
+    })
+    .await
+}
+
+/// Installs and starts tpd (launchd) from the binaries bundled in the app.
+#[tauri::command]
+async fn install_daemon() -> Result<String, String> {
+    on_worker(|| {
+        let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+        let dir = exe.parent().ok_or("no app dir")?;
+        let (tp, tpd) = (dir.join("tp"), dir.join("tpd"));
+        if !tp.is_file() || !tpd.is_file() {
+            return Err("this build does not bundle tp/tpd; run `make install-daemon`".into());
+        }
+        let out = std::process::Command::new(&tp)
+            .args(["daemon", "install", "--tpd"])
+            .arg(&tpd)
+            .output()
+            .map_err(|e| e.to_string())?;
+        let text = format!(
+            "{}{}",
+            String::from_utf8_lossy(&out.stdout),
+            String::from_utf8_lossy(&out.stderr)
+        );
+        if out.status.success() {
+            Ok(text)
+        } else {
+            Err(text)
+        }
     })
     .await
 }
@@ -122,21 +167,39 @@ fn main() {
     let _ = STARTED.set(Instant::now());
     let paths = FactoryPaths::resolve().unwrap_or_else(|_| FactoryPaths::new("factory"));
     let sock = paths.socket();
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .manage(Socket(sock.clone()))
         .invoke_handler(tauri::generate_handler![
             daemon_status,
             project_list,
             audit_tail,
+            rpc,
+            install_daemon,
             app_ready
         ])
         .setup(move |app| {
             bridge_events(app.handle().clone(), sock.clone());
             Ok(())
         })
-        .run(tauri::generate_context!())
+        // Closing the window hides it (the app stays resident, so reopening
+        // is instant); ⌘Q quits. tpd keeps running either way.
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                let _ = window.hide();
+                api.prevent_close();
+            }
+        })
+        .build(tauri::generate_context!())
         .unwrap_or_else(|e| {
             eprintln!("Thee Pori desktop failed to start: {e}");
             std::process::exit(1);
         });
+    app.run(|handle, event| {
+        if let tauri::RunEvent::Reopen { .. } = event
+            && let Some(w) = handle.get_webview_window("main")
+        {
+            let _ = w.show();
+            let _ = w.set_focus();
+        }
+    });
 }

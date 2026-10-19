@@ -1,0 +1,70 @@
+{
+  "formatVersion": 1,
+  "notes": "KEK = Argon2id(NFC(password), salt, t, m KiB, p, 32). Blob = 0x01 || nonce(12) || AES-256-GCM(ct||tag). aad is UTF-8. passwordUtf8Hex is the raw input before NFC.",
+  "kdf": [
+    {
+      "name": "production-params",
+      "password": "correct horse battery staple",
+      "passwordUtf8Hex": "636f727265637420686f727365206261747465727920737461706c65",
+      "saltHex": "000102030405060708090a0b0c0d0e0f",
+      "memoryKiB": 65536,
+      "iterations": 3,
+      "parallelism": 1,
+      "kekHex": "0d1a3c6523c8f06e4e0af9c515aa5b5448cfebd6838f2d52c3d8b6ef8ddc3c2e"
+    },
+    {
+      "name": "nfc-normalised",
+      "password": "café செல்",
+      "passwordUtf8Hex": "63616665cc8120e0ae9ae0af86e0aeb2e0af8d",
+      "saltHex": "000102030405060708090a0b0c0d0e0f",
+      "memoryKiB": 1024,
+      "iterations": 2,
+      "parallelism": 1,
+      "kekHex": "0a5fba6f3f6b1da7da377d7dd780177dcf3f862525a7c7437afbf9acb81d9e98"
+    },
+    {
+      "name": "empty-password",
+      "password": "",
+      "passwordUtf8Hex": "",
+      "saltHex": "000102030405060708090a0b0c0d0e0f",
+      "memoryKiB": 1024,
+      "iterations": 1,
+      "parallelism": 1,
+      "kekHex": "0a6f2a8fdc5ec4bf35827f17b098cb15026d0d990623f7232eea9b2d63a974d4"
+    }
+  ],
+  "seal": [
+    {
+      "name": "wrap-dek",
+      "keyHex": "0d1a3c6523c8f06e4e0af9c515aa5b5448cfebd6838f2d52c3d8b6ef8ddc3c2e",
+      "nonceHex": "a0a1a2a3a4a5a6a7a8a9aaab",
+      "aad": "panuval:dek:v1",
+      "plaintextHex": "4f2b8c1d9e7a6b5c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c",
+      "blobHex": "01a0a1a2a3a4a5a6a7a8a9aaabc55d5439e37ff11a45a07b97d86eb918392ac1b9d733b79b8890681211e9ac4294002919109c360689830b3f13a0c8d5"
+    },
+    {
+      "name": "item-api-key",
+      "keyHex": "4f2b8c1d9e7a6b5c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c",
+      "nonceHex": "b0b1b2b3b4b5b6b7b8b9babb",
+      "aad": "panuval:item:v1|uid-123|item-abc|1",
+      "plaintextHex": "7b2274797065223a226170694b6579222c226e616d65223a224f50454e41495f4150495f4b4559222c2276616c7565223a22736b2d746573742d30303030227d",
+      "blobHex": "01b0b1b2b3b4b5b6b7b8b9babb450ae19642d14c8ded7e57f031c22232b20cc3bc9fa127ff2cc6c3acdb3c2746c24dbbc35de152a17caa9d2d13ea49158b509034747867e49928273bbffc71e8dd9819e3810620928ab225c243937370"
+    },
+    {
+      "name": "item-empty",
+      "keyHex": "4f2b8c1d9e7a6b5c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c",
+      "nonceHex": "c0c1c2c3c4c5c6c7c8c9cacb",
+      "aad": "panuval:item:v1|uid-123|item-empty|7",
+      "plaintextHex": "",
+      "blobHex": "01c0c1c2c3c4c5c6c7c8c9cacb75afc740a8cfab014c45feb0b637f508"
+    }
+  ],
+  "itemAad": [
+    {
+      "uid": "uid-123",
+      "itemId": "item-abc",
+      "version": 1,
+      "aad": "panuval:item:v1|uid-123|item-abc|1"
+    }
+  ]
+}

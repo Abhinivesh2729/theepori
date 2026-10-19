@@ -2,29 +2,28 @@
 
 A personal software factory for one founder on one Mac. A persistent daemon (`tpd`) manages your projects. It runs your installed Claude Code CLI as its employees, and every policy, approval and audit decision is enforced in deterministic code.
 
-> **Status: M0 (foundation) in progress.** The previous Go coding agent (v0.1.0) is archived on the [`legacy/go-agent`](https://github.com/Abhinivesh2729/theepori/tree/legacy/go-agent) branch (tag `go-agent-final`), and its releases still install with the existing `install.sh`.
+> **Status: M0–M6, M8–M11 built; M7 (mobile + relay) deferred.** See [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md). The previous Go coding agent is archived on [`legacy/go-agent`](https://github.com/Abhinivesh2729/theepori/tree/legacy/go-agent).
 
-## What exists today (M0)
-
-- `tpd`: the factory daemon. It holds a single‑instance lock, serves JSON‑RPC on a Unix socket, pushes live events, and runs as a launchd agent that restarts on crash.
-- `tp`: the CLI, with `setup`, `doctor`, `project add|list`, `daemon install|uninstall|status|run|stop|bench`, and `audit tail|verify`.
-- A factory under `~/factory` (or `$TP_FACTORY`): `factory.yaml`, a SQLite state database, and a hash‑chained audit log in `audit/*.jsonl`.
-- **Thee Pori.app** (Tauri 2 + React): live daemon status, projects and audit feed. Closing it never stops the factory.
-
-What's coming next is in [docs/FACTORY_DESIGN.md](docs/FACTORY_DESIGN.md) §12: Claude Code runtime and policy hooks, Mission Control, GitHub/Jira, the manager and daily plan, verification, the vault, the Android app with relay, and more.
-
-## Build and run (macOS)
+## Try it
 
 ```bash
-make build                 # target/release/tp, target/release/tpd
-target/release/tp setup
-make install-daemon        # tp -> ~/.local/bin, tpd -> launchd
-tp doctor
-tp project add ~/code/my-app --jira SF
-make desktop               # target/release/bundle/macos/Thee Pori.app
+sh scripts/build-app.sh          # builds target/release/bundle/macos/Thee Pori.app (tp + tpd inside)
+open "target/release/bundle/macos/Thee Pori.app"
 ```
 
-Requirements: Rust (stable), Node 24, the Claude Code CLI, `gh` and git.
+1. Click **Start factory** in the banner. This installs `tpd` as a launchd agent in `~/Library/Application Support/theepori/bin`.
+2. If your repos live in `~/Documents`, grant **Full Disk Access** to that `tpd` (System Settings → Privacy & Security → Full Disk Access → + → ⌘⇧G → paste the path). Then click **Start factory** again.
+3. **Projects → Add** a local git checkout (optionally with a Jira key). tp writes `project.yaml` and a detected `verify.yaml` you can edit.
+4. **Tasks → New task** (tick *approve now*), or let GitHub issues and CI failures flow in and approve the **Daily plan**.
+5. Watch the agent in the **Coding Workspace**. Approve merges and deploys in the **Approval Center**. **Settings & Safety** has pause, safe mode and stop‑all.
+
+The CLI covers the same factory: `tp doctor`, `tp project add`, `tp audit verify`, `tp daemon status`.
+
+## How it works
+
+- `tpd` is the factory. It runs intake (GitHub via `gh`), the daily plan, assignment and the task state machine: implement → verify ⇄ repair → independent review → PR → merge gate → deploy. It also handles Jira sync through Claude's Atlassian connector, the vault, memory, analytics and export/import.
+- Employees are your installed **Claude Code** CLI, launched per task in a git worktree with tp‑generated settings: the sandbox, deny rules, a fail‑closed PreToolUse policy hook, and the tp MCP tools. Agents never push, use `gh` or see secrets.
+- Every decision that matters is deterministic code with an audit record: risk, merge, deploy, budgets and policy.
 
 ## Development
 

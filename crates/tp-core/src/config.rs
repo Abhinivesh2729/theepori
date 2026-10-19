@@ -21,6 +21,136 @@ pub struct FactoryConfig {
     pub jira: Jira,
     #[serde(default)]
     pub audit: Audit,
+    #[serde(default)]
+    pub policy: Policy,
+    #[serde(default)]
+    pub runtime: Runtime,
+    #[serde(default)]
+    pub github: Github,
+}
+
+/// Highest change risk an automatic action may take. `none` disables it.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum RiskLimit {
+    #[default]
+    None,
+    Low,
+    Medium,
+    High,
+}
+
+impl RiskLimit {
+    pub fn allows(self, risk: tp_proto::Risk) -> bool {
+        use tp_proto::Risk;
+        match self {
+            RiskLimit::None => false,
+            RiskLimit::Low => risk == Risk::Low,
+            RiskLimit::Medium => matches!(risk, Risk::Low | Risk::Medium),
+            RiskLimit::High => risk != Risk::Critical,
+        }
+    }
+}
+
+/// Global policy. Projects may only tighten it (see `project_config`).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields, default)]
+pub struct Policy {
+    /// Tasks at or below this risk skip the daily plan and start on their own.
+    pub auto_approve_max_risk: RiskLimit,
+    pub auto_merge_max_risk: RiskLimit,
+    pub auto_deploy_max_risk: RiskLimit,
+    pub require_review: bool,
+    /// Implementation + repair attempts per task before escalating.
+    pub max_attempts: u32,
+    pub max_run_minutes: u32,
+    /// Passed to Claude Code as --max-budget-usd per run.
+    pub max_run_usd: f64,
+    /// Let coding agents use WebFetch / WebSearch.
+    pub allow_web: bool,
+    /// Extra Bash command patterns (substring or `*` glob) agents may not run.
+    pub deny_commands: Vec<String>,
+    /// Extra path globs agents may not read or edit.
+    pub deny_paths: Vec<String>,
+    /// Path fragments that make a change high risk.
+    pub high_risk_paths: Vec<String>,
+    /// Changed lines above which a change is at least medium risk.
+    pub medium_risk_lines: u32,
+}
+
+impl Default for Policy {
+    fn default() -> Self {
+        Self {
+            auto_approve_max_risk: RiskLimit::None,
+            auto_merge_max_risk: RiskLimit::Low,
+            auto_deploy_max_risk: RiskLimit::None,
+            require_review: true,
+            max_attempts: 3,
+            max_run_minutes: 30,
+            max_run_usd: 2.0,
+            allow_web: false,
+            deny_commands: Vec::new(),
+            deny_paths: Vec::new(),
+            high_risk_paths: [
+                "auth",
+                "security",
+                "crypto",
+                "password",
+                "secret",
+                "token",
+                "migration",
+                ".github/",
+                "terraform",
+                "Dockerfile",
+                "k8s",
+                "helm",
+                "infra/",
+                ".env",
+                "permissions",
+                "payment",
+                "billing",
+            ]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
+            medium_risk_lines: 300,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields, default)]
+pub struct Runtime {
+    /// Path to the claude CLI (default: found on PATH).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub claude_path: Option<String>,
+    /// Model for coding runs (default: Claude Code's default).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    /// Model for the independent reviewer (default: haiku).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub review_model: Option<String>,
+    /// Model for manager reasoning (default: haiku).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub manager_model: Option<String>,
+    /// Model for Jira steward runs (default: haiku).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub steward_model: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields, default)]
+pub struct Github {
+    /// Minutes between reconciliation passes (issues, PRs, CI).
+    pub reconcile_minutes: u32,
+}
+
+impl Default for Github {
+    fn default() -> Self {
+        Self {
+            reconcile_minutes: 15,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -54,12 +184,28 @@ impl Default for Limits {
     }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Jira {
     /// Atlassian site cloudId, passed to steward runs to save a lookup.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cloud_id: Option<String>,
+    /// Sync tracked work to Jira for projects that have a Jira key.
+    #[serde(default = "yes")]
+    pub enabled: bool,
+}
+
+fn yes() -> bool {
+    true
+}
+
+impl Default for Jira {
+    fn default() -> Self {
+        Self {
+            cloud_id: None,
+            enabled: true,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -83,6 +229,9 @@ impl Default for FactoryConfig {
             limits: Limits::default(),
             jira: Jira::default(),
             audit: Audit::default(),
+            policy: Policy::default(),
+            runtime: Runtime::default(),
+            github: Github::default(),
         }
     }
 }

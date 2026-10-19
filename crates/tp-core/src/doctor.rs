@@ -76,8 +76,54 @@ pub fn run_all(paths: &FactoryPaths, home: &Path) -> Vec<Check> {
     ));
     checks.push(claude_user_settings(&home.join(".claude/settings.json")));
     checks.push(cloudflared_config(&home.join(".cloudflared/config.yml")));
+    checks.push(project_access(paths));
     checks.push(daemon(paths));
     checks
+}
+
+pub const FDA_FIX: &str = "System Settings → Privacy & Security → Full Disk Access → + → add ~/Library/Application Support/theepori/bin/tpd (press ⌘⇧G to type the path), then restart tpd (`tp daemon install`)";
+
+/// Tries to list `path` within `timeout`. macOS privacy (TCC) can make a
+/// launchd agent block on ~/Documents, ~/Desktop or ~/Downloads instead of
+/// failing; this turns that into a clear error.
+pub fn can_access(path: &Path, timeout: Duration) -> std::result::Result<(), String> {
+    let (tx, rx) = std::sync::mpsc::channel();
+    let p = path.to_path_buf();
+    std::thread::spawn(move || {
+        let _ = tx.send(std::fs::read_dir(&p).map(|_| ()).map_err(|e| e.to_string()));
+    });
+    match rx.recv_timeout(timeout) {
+        Ok(Ok(())) => Ok(()),
+        Ok(Err(e)) if e.contains("Operation not permitted") => Err(format!(
+            "macOS privacy settings block access to {} ({e}); {FDA_FIX}",
+            path.display()
+        )),
+        Ok(Err(e)) => Err(format!("{}: {e}", path.display())),
+        Err(_) => Err(format!(
+            "macOS is holding access to {} (privacy prompt or Full Disk Access needed); {FDA_FIX}",
+            path.display()
+        )),
+    }
+}
+
+/// Every registered repository must be readable by this process.
+pub fn project_access(paths: &FactoryPaths) -> Check {
+    let list = db::open(&paths.db())
+        .ok()
+        .and_then(|c| crate::registry::list(&c).ok())
+        .unwrap_or_default();
+    let blocked: Vec<String> = list
+        .iter()
+        .filter_map(|p| can_access(Path::new(&p.repo_path), Duration::from_secs(3)).err())
+        .collect();
+    if blocked.is_empty() {
+        Check::ok(
+            "repository access",
+            format!("{} project(s) readable", list.len()),
+        )
+    } else {
+        Check::fail("repository access", blocked.join("; "), FDA_FIX)
+    }
 }
 
 pub fn worst(checks: &[Check]) -> Status {

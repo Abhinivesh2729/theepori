@@ -9,6 +9,9 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+pub mod factory;
+pub use factory::*;
+
 /// Bumped on any breaking change to methods or payloads.
 pub const PROTOCOL_VERSION: u32 = 1;
 
@@ -98,6 +101,20 @@ pub struct DaemonStatus {
     pub factory_root: String,
     pub projects: u64,
     pub audit_events: u64,
+    #[serde(default = "default_mode")]
+    pub mode: Mode,
+    #[serde(default)]
+    pub active_runs: u32,
+    #[serde(default)]
+    pub open_tasks: u32,
+    #[serde(default)]
+    pub pending_approvals: u32,
+    #[serde(default)]
+    pub vault_unlocked: bool,
+}
+
+fn default_mode() -> Mode {
+    Mode::Normal
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
