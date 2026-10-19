@@ -99,15 +99,14 @@ pub struct NewTask {
 /// Inserts a task unless one with the same dedupe key exists; returns
 /// (task, created).
 pub fn insert_task(c: &Connection, t: NewTask) -> Result<(TaskSummary, bool)> {
-    if let Some(k) = &t.dedupe_key {
-        if let Some(n) = c
+    if let Some(k) = &t.dedupe_key
+        && let Some(n) = c
             .query_row("SELECT n FROM tasks WHERE dedupe_key = ?1", [k], |r| {
                 r.get::<_, i64>(0)
             })
             .optional()?
-        {
-            return Ok((get_task(c, n)?, false));
-        }
+    {
+        return Ok((get_task(c, n)?, false));
     }
     let now = now_rfc3339();
     c.execute(
@@ -344,7 +343,10 @@ pub fn runs_for_task(c: &Connection, task_n: i64) -> Result<Vec<Run>> {
 }
 
 /// Runs in starting/running state (for recovery and the status line).
-pub fn active_runs(c: &Connection) -> Result<Vec<(i64, Option<i64>, Option<i64>, RunKind)>> {
+/// (run n, task n, pid, kind)
+pub type ActiveRun = (i64, Option<i64>, Option<i64>, RunKind);
+
+pub fn active_runs(c: &Connection) -> Result<Vec<ActiveRun>> {
     let mut st =
         c.prepare("SELECT n, task_n, pid, kind FROM runs WHERE state IN ('starting','running')")?;
     let rows = st.query_map([], |r| {
@@ -499,15 +501,14 @@ pub struct NewApproval {
 
 /// Returns (approval, created). A pending approval with the same dedupe key is reused.
 pub fn insert_approval(c: &Connection, a: NewApproval) -> Result<(Approval, bool)> {
-    if let Some(k) = &a.dedupe_key {
-        if let Some(n) = c
+    if let Some(k) = &a.dedupe_key
+        && let Some(n) = c
             .query_row("SELECT n FROM approvals WHERE dedupe_key = ?1", [k], |r| {
                 r.get::<_, i64>(0)
             })
             .optional()?
-        {
-            return Ok((get_approval(c, n)?, false));
-        }
+    {
+        return Ok((get_approval(c, n)?, false));
     }
     c.execute(
         "INSERT INTO approvals (kind, state, task_n, project, title, what, why, impact, risks, risk, reversible,
@@ -1009,10 +1010,10 @@ pub fn finish_deployment(
         "UPDATE deployments SET state = ?2, health = ?3, version_ok = ?4, rolled_back = ?5, finished_at = ?6 WHERE n = ?1",
         params![n, state, health, version_ok, rolled_back, now_rfc3339()],
     )?;
-    Ok(list_deployments(c, None, None)?
+    list_deployments(c, None, None)?
         .into_iter()
         .find(|d| d.id == deploy_id(n))
-        .ok_or_else(|| Error::NotFound(deploy_id(n)))?)
+        .ok_or_else(|| Error::NotFound(deploy_id(n)))
 }
 
 pub fn list_deployments(

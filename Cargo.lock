@@ -4181,6 +4181,7 @@ dependencies = [
  "tempfile",
  "tp-core",
  "tp-proto",
+ "tp-vault",
 ]
 
 [[package]]
@@ -4251,13 +4252,14 @@ name = "tpd"
 version = "0.2.0-dev"
 dependencies = [
  "anyhow",
- "rusqlite",
  "serde",
  "serde_json",
  "tempfile",
+ "time",
  "tokio",
  "tp-core",
  "tp-proto",
+ "tp-vault",
  "tracing",
  "tracing-subscriber",
 ]

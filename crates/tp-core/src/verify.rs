@@ -58,12 +58,15 @@ pub fn run_shell(
     Ok((code, String::from_utf8_lossy(&buf).into_owned()))
 }
 
+/// Secrets for a vault environment name (`None` = no secrets).
+pub type EnvFor<'a> = dyn Fn(Option<&str>) -> Vec<(String, String)> + 'a;
+
 /// Runs the checks in order; evidence logs go to `evidence_dir`.
 pub fn run_checks(
     worktree: &Path,
     checks: &[Check],
     evidence_dir: &Path,
-    env_for: &dyn Fn(Option<&str>) -> Vec<(String, String)>,
+    env_for: &EnvFor<'_>,
     redactor: &Redactor,
 ) -> Vec<Verification> {
     let _ = std::fs::create_dir_all(evidence_dir);

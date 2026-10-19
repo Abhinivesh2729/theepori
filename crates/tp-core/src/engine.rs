@@ -364,7 +364,7 @@ impl Engine {
 
     fn stop_task_runs(&self, n: i64) {
         let runs: Vec<i64> = self
-            .db(|c| store::active_runs(c))
+            .db(store::active_runs)
             .unwrap_or_default()
             .into_iter()
             .filter(|(_, t, _, _)| *t == Some(n))
@@ -671,28 +671,28 @@ impl Engine {
         let cfg = self.cfg();
         let (summary, mut whys) = manager::plan_fallback(&tasks);
         let mut summary = summary;
-        if !tasks.is_empty() {
-            if let Ok((v, res)) = manager::structured(
+        if !tasks.is_empty()
+            && let Ok((v, res)) = manager::structured(
                 self.runtime.as_ref(),
                 &self.run_dir("manager")?,
                 cfg.runtime.manager_model.as_deref(),
                 &manager::plan_prompt(&tasks),
                 &manager::plan_schema(),
-            ) {
-                self.record_llm_usage(None, None, RunKind::Manager, &res);
-                if let Some(s) = v.get("summary").and_then(Value::as_str) {
-                    summary = s.to_string();
-                }
-                if let Some(rs) = v.get("rationales").and_then(Value::as_array) {
-                    for (i, t) in tasks.iter().enumerate() {
-                        if let Some(w) = rs
-                            .iter()
-                            .find(|r| r.get("id").and_then(Value::as_str) == Some(&t.id))
-                            .and_then(|r| r.get("why"))
-                            .and_then(Value::as_str)
-                        {
-                            whys[i] = w.to_string();
-                        }
+            )
+        {
+            self.record_llm_usage(None, None, RunKind::Manager, &res);
+            if let Some(s) = v.get("summary").and_then(Value::as_str) {
+                summary = s.to_string();
+            }
+            if let Some(rs) = v.get("rationales").and_then(Value::as_array) {
+                for (i, t) in tasks.iter().enumerate() {
+                    if let Some(w) = rs
+                        .iter()
+                        .find(|r| r.get("id").and_then(Value::as_str) == Some(&t.id))
+                        .and_then(|r| r.get("why"))
+                        .and_then(Value::as_str)
+                    {
+                        whys[i] = w.to_string();
                     }
                 }
             }
@@ -798,8 +798,8 @@ impl Engine {
                             if is_new {
                                 new_signals += 1;
                             }
-                            if task.is_none() {
-                                if let Some(n) = self.task_from_signal(
+                            if task.is_none()
+                                && let Some(n) = self.task_from_signal(
                                     p,
                                     sn,
                                     &i.title,
@@ -808,10 +808,10 @@ impl Engine {
                                     "github_issue",
                                     Some(&i.url),
                                     &format!("gh:{repo}#{}", i.number),
-                                )? {
-                                    created += 1;
-                                    let _ = n;
-                                }
+                                )?
+                            {
+                                created += 1;
+                                let _ = n;
                             }
                         }
                     }
@@ -823,55 +823,52 @@ impl Engine {
                     ),
                 }
             }
-            if pc.intake.ci_failures {
-                if let Ok(runs) = self.gh.runs(&repo, &pc.base_branch) {
-                    if let Some(r) = runs.iter().find(|r| r.status == "completed") {
-                        if r.conclusion == "failure" {
-                            let log = self.gh.failed_log(&repo, r.id).unwrap_or_default();
-                            let ext =
-                                format!("{}@{}", r.name, &r.head_sha[..r.head_sha.len().min(12)]);
-                            let title = format!("CI failing on {}: {}", pc.base_branch, r.name);
-                            let body = format!(
-                                "Workflow run: {}\n\nFailed log (tail):\n```\n{}\n```",
-                                r.url,
-                                Redactor::new().redact(&log)
-                            );
-                            let (sn, is_new, task) = self.db(|c| {
-                                store::upsert_signal(
-                                    c,
-                                    store::NewSignal {
-                                        project: &p.slug,
-                                        source: "github",
-                                        kind: "ci_failure",
-                                        external_id: &ext,
-                                        title: &title,
-                                        body: &body,
-                                        url: Some(&r.url),
-                                        labels: &[],
-                                    },
-                                )
-                            })?;
-                            if is_new {
-                                new_signals += 1;
-                            }
-                            if task.is_none()
-                                && self
-                                    .task_from_signal(
-                                        p,
-                                        sn,
-                                        &title,
-                                        &body,
-                                        &["ci".into()],
-                                        "ci_failure",
-                                        Some(&r.url),
-                                        &format!("ci:{repo}:{ext}"),
-                                    )?
-                                    .is_some()
-                            {
-                                created += 1;
-                            }
-                        }
-                    }
+            if pc.intake.ci_failures
+                && let Ok(runs) = self.gh.runs(&repo, &pc.base_branch)
+                && let Some(r) = runs.iter().find(|r| r.status == "completed")
+                && r.conclusion == "failure"
+            {
+                let log = self.gh.failed_log(&repo, r.id).unwrap_or_default();
+                let ext = format!("{}@{}", r.name, &r.head_sha[..r.head_sha.len().min(12)]);
+                let title = format!("CI failing on {}: {}", pc.base_branch, r.name);
+                let body = format!(
+                    "Workflow run: {}\n\nFailed log (tail):\n```\n{}\n```",
+                    r.url,
+                    Redactor::new().redact(&log)
+                );
+                let (sn, is_new, task) = self.db(|c| {
+                    store::upsert_signal(
+                        c,
+                        store::NewSignal {
+                            project: &p.slug,
+                            source: "github",
+                            kind: "ci_failure",
+                            external_id: &ext,
+                            title: &title,
+                            body: &body,
+                            url: Some(&r.url),
+                            labels: &[],
+                        },
+                    )
+                })?;
+                if is_new {
+                    new_signals += 1;
+                }
+                if task.is_none()
+                    && self
+                        .task_from_signal(
+                            p,
+                            sn,
+                            &title,
+                            &body,
+                            &["ci".into()],
+                            "ci_failure",
+                            Some(&r.url),
+                            &format!("ci:{repo}:{ext}"),
+                        )?
+                        .is_some()
+                {
+                    created += 1;
                 }
             }
         }
@@ -1118,15 +1115,11 @@ impl Engine {
                                 synced += 1;
                                 if let (Some(item), Some(k)) =
                                     (item, v.get("issue_key").and_then(Value::as_str))
+                                    && let Some(tn) = item.task_n
+                                    && item.op == "create"
                                 {
-                                    if let Some(tn) = item.task_n {
-                                        if item.op == "create" {
-                                            self.db(|c| {
-                                                store::set_task_field(c, tn, "jira_key", &k)
-                                            })?;
-                                            self.emit_task(tn);
-                                        }
-                                    }
+                                    self.db(|c| store::set_task_field(c, tn, "jira_key", &k))?;
+                                    self.emit_task(tn);
                                 }
                                 self.record(NewEvent::new(ActorKind::Steward, &rname, "jira.synced").project(&project).details(json!({"key": item.map(|i| i.key.clone()), "result": v})))?;
                             }
@@ -1213,8 +1206,9 @@ impl Engine {
             }
             self.assign(&cfg);
         }
-        if ctl.mode != Mode::Safe && self.throttle("prs", Duration::from_secs(60)) {
-            if let Ok(prs) = self.db(|c| {
+        if ctl.mode != Mode::Safe
+            && self.throttle("prs", Duration::from_secs(60))
+            && let Ok(prs) = self.db(|c| {
                 store::list_tasks(
                     c,
                     &TaskQuery {
@@ -1222,13 +1216,13 @@ impl Engine {
                         ..Default::default()
                     },
                 )
-            }) {
-                for t in prs {
-                    if let Ok(n) = store::parse_id('T', &t.id) {
-                        if t.pr_url.is_some() {
-                            self.spawn_pr_check(n);
-                        }
-                    }
+            })
+        {
+            for t in prs {
+                if let Ok(n) = store::parse_id('T', &t.id)
+                    && t.pr_url.is_some()
+                {
+                    self.spawn_pr_check(n);
                 }
             }
         }
@@ -1242,12 +1236,11 @@ impl Engine {
                 e.unmark(-1);
             });
         }
-        if self.throttle("vault", Duration::from_secs(30)) {
-            if let Ok(v) = self.vault.lock() {
-                if let Some(h) = v.as_ref() {
-                    let _ = h.is_unlocked();
-                }
-            }
+        if self.throttle("vault", Duration::from_secs(30))
+            && let Ok(v) = self.vault.lock()
+            && let Some(h) = v.as_ref()
+        {
+            let _ = h.is_unlocked();
         }
     }
 
@@ -2659,11 +2652,11 @@ impl Engine {
     /// their tasks go back to the queue (they resume their session).
     pub fn recover(&self) -> Result<u32> {
         let mut n_rec = 0;
-        for (rid, task, pid, _) in self.db(|c| store::active_runs(c))? {
-            if pid.is_some_and(|p| crate::runtime::pid_alive(p as u32)) {
-                if let Some(p) = pid {
-                    let _ = crate::runtime::signal(p as u32, "TERM");
-                }
+        for (rid, task, pid, _) in self.db(store::active_runs)? {
+            if pid.is_some_and(|p| crate::runtime::pid_alive(p as u32))
+                && let Some(p) = pid
+            {
+                let _ = crate::runtime::signal(p as u32, "TERM");
             }
             self.db(|c| {
                 store::finish_run(
@@ -3117,4 +3110,358 @@ fn in_minutes(m: u32) -> String {
     let t = time::OffsetDateTime::now_utc() + time::Duration::minutes(i64::from(m));
     let f = time::macros::format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].000Z");
     t.format(&f).unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::runtime::{Capabilities, Claude, RunHandle, Sink};
+
+    /// Fake Claude with per-test env (structured output, file to edit).
+    struct FakeRt {
+        inner: Claude,
+        env: Vec<(String, String)>,
+    }
+    impl Runtime for FakeRt {
+        fn capabilities(&self) -> Capabilities {
+            self.inner.capabilities()
+        }
+        fn start(&self, spec: &RunSpec, sink: Sink) -> Result<RunHandle> {
+            let mut s = spec.clone();
+            s.env.extend(self.env.clone());
+            self.inner.start(&s, sink)
+        }
+    }
+
+    fn sh(dir: &Path, args: &[&str]) {
+        let ok = std::process::Command::new("git")
+            .arg("-C")
+            .arg(dir)
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(
+            ok.status.success(),
+            "git {args:?}: {}",
+            String::from_utf8_lossy(&ok.stderr)
+        );
+    }
+
+    struct Fixture {
+        _d: tempfile::TempDir,
+        engine: Arc<Engine>,
+        merged: Arc<Mutex<Vec<String>>>,
+    }
+
+    fn fixture(fake_file: &str) -> Fixture {
+        let d = tempfile::tempdir().unwrap();
+        let paths = FactoryPaths::new(d.path().join("f"));
+        crate::setup::setup(&paths, "t").unwrap();
+        // A repo whose origin is a local bare repo, so pushes work.
+        let origin = d.path().join("origin.git");
+        std::fs::create_dir_all(&origin).unwrap();
+        sh(&origin, &["init", "-q", "--bare", "-b", "main"]);
+        let repo = crate::git::testutil::repo(d.path());
+        sh(
+            &repo,
+            &["remote", "add", "origin", origin.to_str().unwrap()],
+        );
+        sh(&repo, &["push", "-q", "-u", "origin", "main"]);
+        {
+            let c = crate::db::open(&paths.db()).unwrap();
+            registry::add(
+                &c,
+                &paths,
+                &ProjectAdd {
+                    repo_path: repo.display().to_string(),
+                    slug: Some("app".into()),
+                    name: None,
+                    jira_key: None,
+                },
+            )
+            .unwrap();
+        }
+        project_config::write_atomic(&project_config::project_yaml(&paths, "app"), "base_branch: main\ngithub: o/app\nintake: {github_issues: false, ci_failures: false}\n").unwrap();
+        project_config::write_atomic(
+            &project_config::verify_yaml(&paths, "app"),
+            "checks:\n  - {name: changed, kind: test, run: 'git status --porcelain | grep -q .'}\n",
+        )
+        .unwrap();
+
+        let fake = crate::runtime::testutil::fake_claude(d.path());
+        let review = r#"{"addresses_task": true, "summary": "looks right", "findings": []}"#;
+        let rt = Arc::new(FakeRt {
+            inner: Claude::new(fake),
+            env: vec![
+                ("FAKE_STRUCTURED".into(), review.into()),
+                ("FAKE_FILE".into(), fake_file.into()),
+            ],
+        });
+        let merged = Arc::new(Mutex::new(Vec::new()));
+        let m2 = merged.clone();
+        let created = Arc::new(Mutex::new(false));
+        let gh = Gh::fake(move |a| {
+            let joined = a.join(" ");
+            Ok(match (a[0].as_str(), a[1].as_str()) {
+                ("pr", "list") => if *created.lock().unwrap() { r#"[{"number": 7, "url": "https://github.com/o/app/pull/7"}]"#.into() } else { "[]".into() },
+                ("pr", "create") => {
+                    *created.lock().unwrap() = true;
+                    "https://github.com/o/app/pull/7\n".into()
+                }
+                ("pr", "view") => r#"{"number":7,"url":"https://github.com/o/app/pull/7","state":"OPEN","mergeable":"MERGEABLE","reviewDecision":"","statusCheckRollup":[{"name":"ci","conclusion":"SUCCESS","status":"COMPLETED"}],"headRefOid":"abc"}"#.into(),
+                ("pr", "merge") => {
+                    m2.lock().unwrap().push(joined);
+                    String::new()
+                }
+                _ => "[]".into(),
+            })
+        });
+        let tp_bin = std::env::current_exe().unwrap(); // hooks are not exercised by the fake runtime
+        let engine = Engine::new(paths, rt, gh, tp_bin, Box::new(|_, _| {})).unwrap();
+        Fixture {
+            _d: d,
+            engine,
+            merged,
+        }
+    }
+
+    fn wait_for(e: &Arc<Engine>, id: &str, want: &[TaskState]) -> TaskSummary {
+        let n = store::parse_id('T', id).unwrap();
+        for _ in 0..600 {
+            e.tick();
+            let t = e.db(|c| store::get_task(c, n)).unwrap();
+            if want.contains(&t.state) {
+                return t;
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        panic!(
+            "task {id} never reached {want:?}: {:?}",
+            e.task_detail(id).unwrap()
+        );
+    }
+
+    #[test]
+    fn low_risk_task_flows_to_merged_done() {
+        let fx = fixture("CHANGES.md");
+        let e = &fx.engine;
+        let t = e
+            .create_task(
+                &TaskCreate {
+                    project: "app".into(),
+                    title: "Fix typo in README".into(),
+                    body: "".into(),
+                    category: Some(Category::Bug),
+                    priority: None,
+                    approve_now: true,
+                },
+                "test",
+            )
+            .unwrap();
+        assert_eq!(t.state, TaskState::Approved);
+        let t = wait_for(
+            e,
+            &t.id,
+            &[
+                TaskState::PrOpen,
+                TaskState::Done,
+                TaskState::Blocked,
+                TaskState::Escalated,
+                TaskState::AwaitingApproval,
+            ],
+        );
+        assert_eq!(t.state, TaskState::PrOpen, "{:?}", t.blocked_reason);
+        let d = e.task_detail(&t.id).unwrap();
+        assert!(
+            d.verifications
+                .iter()
+                .all(|v| v.status == CheckStatus::Passed)
+        );
+        assert!(d.runs.iter().any(|r| r.kind == RunKind::Review));
+        // Merge gate (policy: low risk auto-merge) then done.
+        let n = store::parse_id('T', &t.id).unwrap();
+        e.check_pr(n).unwrap();
+        let t = e.db(|c| store::get_task(c, n)).unwrap();
+        assert_eq!(t.state, TaskState::Done);
+        assert_eq!(fx.merged.lock().unwrap().len(), 1);
+        let v = e.db(|c| e.audit.verify(c)).unwrap();
+        assert!(v.ok);
+        let merged = e
+            .db(|c| e.audit.tail(c, 200))
+            .unwrap()
+            .into_iter()
+            .find(|r| r.action == "pr.merged")
+            .unwrap();
+        assert!(
+            merged
+                .authorization
+                .unwrap()
+                .starts_with("policy:auto_merge_max_risk")
+        );
+    }
+
+    #[test]
+    fn high_risk_change_is_never_auto_merged() {
+        let fx = fixture("src/auth/session.rs");
+        let e = &fx.engine;
+        let t = e
+            .create_task(
+                &TaskCreate {
+                    project: "app".into(),
+                    title: "Tweak session expiry".into(),
+                    body: "".into(),
+                    category: Some(Category::Bug),
+                    priority: None,
+                    approve_now: true,
+                },
+                "test",
+            )
+            .unwrap();
+        let t = wait_for(
+            e,
+            &t.id,
+            &[TaskState::PrOpen, TaskState::Blocked, TaskState::Escalated],
+        );
+        assert_eq!(t.state, TaskState::PrOpen);
+        assert_eq!(t.risk, Risk::High);
+        let n = store::parse_id('T', &t.id).unwrap();
+        e.check_pr(n).unwrap();
+        let t = e.db(|c| store::get_task(c, n)).unwrap();
+        assert_eq!(t.state, TaskState::AwaitingApproval);
+        assert!(
+            fx.merged.lock().unwrap().is_empty(),
+            "AC 15: unauthorized merge blocked"
+        );
+        let a = e
+            .db(|c| store::task_approval(c, n, ApprovalKind::Merge))
+            .unwrap()
+            .unwrap();
+        e.decide(
+            &ApprovalDecision {
+                id: a.id,
+                decision: Decision::Approve,
+                note: None,
+            },
+            "founder",
+        )
+        .unwrap();
+        let t = wait_for(e, &t.id, &[TaskState::Done]);
+        assert_eq!(t.state, TaskState::Done);
+        assert_eq!(fx.merged.lock().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn safe_mode_blocks_merge_even_with_approval() {
+        let fx = fixture("CHANGES.md");
+        let e = &fx.engine;
+        let t = e
+            .create_task(
+                &TaskCreate {
+                    project: "app".into(),
+                    title: "x".into(),
+                    body: "".into(),
+                    category: Some(Category::Bug),
+                    priority: None,
+                    approve_now: true,
+                },
+                "test",
+            )
+            .unwrap();
+        wait_for(e, &t.id, &[TaskState::PrOpen]);
+        e.set_controls(
+            &ControlsUpdate {
+                mode: Some(Mode::Safe),
+                ..Default::default()
+            },
+            "test",
+        )
+        .unwrap();
+        let n = store::parse_id('T', &t.id).unwrap();
+        e.check_pr(n).unwrap();
+        assert!(fx.merged.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn plan_approval_releases_tasks_and_recovery_requeues() {
+        let fx = fixture("CHANGES.md");
+        let e = &fx.engine;
+        e.set_controls(
+            &ControlsUpdate {
+                mode: Some(Mode::Paused),
+                ..Default::default()
+            },
+            "test",
+        )
+        .unwrap();
+        let a = e
+            .create_task(
+                &TaskCreate {
+                    project: "app".into(),
+                    title: "Crash on start".into(),
+                    body: "".into(),
+                    category: None,
+                    priority: None,
+                    approve_now: false,
+                },
+                "test",
+            )
+            .unwrap();
+        let b = e
+            .create_task(
+                &TaskCreate {
+                    project: "app".into(),
+                    title: "Add dark mode".into(),
+                    body: "".into(),
+                    category: Some(Category::Feature),
+                    priority: None,
+                    approve_now: false,
+                },
+                "test",
+            )
+            .unwrap();
+        assert_eq!(a.state, TaskState::Triaged);
+        let plan = e.generate_plan("test").unwrap();
+        assert_eq!(plan.items.len(), 2);
+        assert_eq!(plan.items[0].task.id, a.id, "bug before feature");
+        let ap = e
+            .db(|c| store::list_approvals(c, Some(ApprovalState::Pending), None))
+            .unwrap();
+        assert_eq!(ap.len(), 1);
+        e.decide(
+            &ApprovalDecision {
+                id: ap[0].id.clone(),
+                decision: Decision::Approve,
+                note: None,
+            },
+            "founder",
+        )
+        .unwrap();
+        let tb = e
+            .db(|c| store::get_task(c, store::parse_id('T', &b.id)?))
+            .unwrap();
+        assert_eq!(tb.state, TaskState::Approved);
+        // Simulate a crash mid-run: a running run with a dead pid.
+        let bn = store::parse_id('T', &b.id).unwrap();
+        e.db(|c| {
+            store::set_task_state(c, bn, TaskState::Implementing, None)?;
+            let r = store::insert_run(
+                c,
+                store::NewRun {
+                    task_n: Some(bn),
+                    project: Some("app"),
+                    kind: RunKind::Implement,
+                    runtime: "claude",
+                    model: None,
+                },
+            )?;
+            store::run_started(c, r, 999_999)
+        })
+        .unwrap();
+        assert_eq!(e.recover().unwrap(), 1);
+        assert_eq!(
+            e.db(|c| store::get_task(c, bn)).unwrap().state,
+            TaskState::Approved
+        );
+        assert!(e.db(store::active_runs).unwrap().is_empty());
+    }
 }

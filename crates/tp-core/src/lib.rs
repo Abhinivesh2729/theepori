@@ -15,6 +15,7 @@ pub mod hook;
 pub mod jira;
 pub mod launchd;
 pub mod manager;
+pub mod mcp;
 pub mod memory;
 pub mod paths;
 pub mod policy;

@@ -39,6 +39,26 @@ enum Cmd {
     /// Read and verify the audit log
     #[command(subcommand)]
     Audit(AuditCmd),
+    /// Claude Code hook entrypoint (used by tp-generated settings)
+    #[command(hide = true)]
+    Hook {
+        /// pre | post
+        event: String,
+        #[arg(long)]
+        run: String,
+    },
+    /// MCP server for agent runs (used by tp-generated MCP config)
+    #[command(hide = true)]
+    Mcp {
+        #[arg(long)]
+        run: String,
+    },
+    /// Import secrets from a Panuval store into TP Vault
+    VaultImportPanuval {
+        /// Panuval store path (default ~/.config/panuval)
+        #[arg(long)]
+        store: Option<PathBuf>,
+    },
 }
 
 #[derive(Args)]
@@ -212,6 +232,53 @@ fn run(cli: Cli) -> Result<ExitCode> {
             }
         }
         Cmd::Daemon(cmd) => return daemon_cmd(&paths, cmd),
+        Cmd::Hook { event, run } => {
+            use std::io::Read;
+            let mut input = String::new();
+            let _ = std::io::stdin().read_to_string(&mut input);
+            match event.as_str() {
+                "pre" => {
+                    let out = tp_core::hook::pre(&paths, &run, &input);
+                    if !out.is_null() {
+                        println!("{out}");
+                    }
+                }
+                "post" => {
+                    let _ = tp_core::hook::post(&paths, &run, &input);
+                }
+                other => bail!("unknown hook event {other}"),
+            }
+        }
+        Cmd::Mcp { run } => {
+            let stdin = std::io::stdin();
+            tp_core::mcp::serve(&paths, &run, stdin.lock(), std::io::stdout())?;
+        }
+        Cmd::VaultImportPanuval { store } => {
+            let store = store.unwrap_or_else(|| home().unwrap_or_default().join(".config/panuval"));
+            let vault = tp_vault::Vault::open(&paths.vault_dir()).context(
+                "TP Vault is not initialized; run `tp` desktop Vault > Initialize first",
+            )?;
+            let tp_pw = rpassword_prompt("TP Vault master password: ")?;
+            let mut unlocked = vault.unlock(&tp_pw)?;
+            let pan_pw = rpassword_prompt("Panuval master password: ")?;
+            let report = tp_vault::import_panuval(&store, &pan_pw, &mut unlocked, |i| {
+                let project = i
+                    .folder
+                    .rsplit('/')
+                    .next()
+                    .map(registry::slugify)
+                    .filter(|f| !f.is_empty());
+                tp_vault::Scope::new(project.unwrap_or_else(|| "global".into()), "default")
+            })?;
+            println!(
+                "Imported {} item(s), skipped {}.",
+                report.imported.len(),
+                report.skipped.len()
+            );
+            for s in &report.skipped {
+                println!("  skipped {}: {}", s.panuval_path, s.reason);
+            }
+        }
         Cmd::Audit(AuditCmd::Tail { n, json }) => {
             let recs: Vec<AuditRecord> = match daemon(&paths) {
                 Some(mut c) => c.call(method::AUDIT_TAIL, json!({"limit": n}))?,
@@ -402,6 +469,28 @@ fn find_tpd(explicit: Option<PathBuf>) -> Result<PathBuf> {
     }
     doctor::which("tpd")
         .context("tpd not found next to tp or on PATH; build it with `make build` or pass --tpd")
+}
+
+/// Reads a password from the terminal without echo (stty), falling back to a plain read.
+fn rpassword_prompt(prompt: &str) -> Result<String> {
+    use std::io::Write;
+    eprint!("{prompt}");
+    std::io::stderr().flush().ok();
+    let echo_off = std::process::Command::new("stty")
+        .arg("-echo")
+        .stdin(std::process::Stdio::inherit())
+        .status()
+        .is_ok_and(|s| s.success());
+    let mut s = String::new();
+    std::io::stdin().read_line(&mut s)?;
+    if echo_off {
+        let _ = std::process::Command::new("stty")
+            .arg("echo")
+            .stdin(std::process::Stdio::inherit())
+            .status();
+        eprintln!();
+    }
+    Ok(s.trim_end_matches(['\n', '\r']).to_string())
 }
 
 fn home() -> Result<PathBuf> {

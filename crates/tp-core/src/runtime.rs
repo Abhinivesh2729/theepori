@@ -300,10 +300,10 @@ impl Runtime for Claude {
                 .lines()
                 .map_while(std::result::Result::ok)
             {
-                if let Ok(mut b) = err_buf.lock() {
-                    if b.len() < 200 {
-                        b.push(line);
-                    }
+                if let Ok(mut b) = err_buf.lock()
+                    && b.len() < 200
+                {
+                    b.push(line);
                 }
             }
         });
@@ -623,7 +623,7 @@ done
 sid="${resume:-sess-$$}"
 echo '{"type":"system","subtype":"init","session_id":"'$sid'","model":"fake-model","tools":["Bash","Edit"],"capabilities":["interrupt_receipt_v1"]}'
 echo '{"type":"assistant","message":{"content":[{"type":"text","text":"working on it"},{"type":"tool_use","id":"tu1","name":"Edit","input":{"file_path":"CHANGES.md"}}]}}'
-if [ "$schema" = 0 ]; then echo "fake-change" >> CHANGES.md; fi
+if [ "$schema" = 0 ]; then f="${FAKE_FILE:-CHANGES.md}"; mkdir -p "$(dirname "$f")"; echo "fake-change" >> "$f"; fi
 echo '{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"tu1","content":"ok"}]}}'
 if [ "${FAKE_SLEEP:-0}" != 0 ]; then sleep "$FAKE_SLEEP"; fi
 so="${FAKE_STRUCTURED:-null}"
