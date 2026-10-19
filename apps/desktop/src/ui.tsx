@@ -453,3 +453,41 @@ export function JsonBlock({ value }: { value: unknown }) {
   }
   return <pre className="json">{s.length > 20000 ? `${s.slice(0, 20000)}\n… (truncated)` : s}</pre>;
 }
+
+// ------------------------------------------------------------ toasts
+
+type ToastMsg = { id: number; text: string; tone?: "bad" };
+const toastSubs = new Set<(t: ToastMsg | null) => void>();
+let toastSeq = 0;
+
+/** Brief confirmation at the bottom of the window. */
+export function toast(text: string, tone?: "bad") {
+  const t = { id: ++toastSeq, text, tone };
+  toastSubs.forEach((h) => h(t));
+}
+
+export function Toaster() {
+  const [t, setT] = useState<ToastMsg | null>(null);
+  useEffect(() => {
+    let timer = 0;
+    const h = (m: ToastMsg | null) => {
+      setT(m);
+      window.clearTimeout(timer);
+      if (m) timer = window.setTimeout(() => setT(null), m.tone === "bad" ? 7000 : 3000);
+    };
+    toastSubs.add(h);
+    return () => {
+      toastSubs.delete(h);
+      window.clearTimeout(timer);
+    };
+  }, []);
+  if (!t) return null;
+  return (
+    <div className={`toast ${t.tone ?? ""}`} role="status" key={t.id}>
+      <span className="pre">{t.text}</span>
+      <button className="modal-x" style={{ color: "inherit" }} aria-label="Dismiss" onClick={() => setT(null)}>
+        ×
+      </button>
+    </div>
+  );
+}

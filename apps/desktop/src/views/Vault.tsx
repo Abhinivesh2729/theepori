@@ -47,7 +47,8 @@ function Init({ onDone }: { onDone: (s: VaultStatus) => void }) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (pw.length < 12 || pw !== pw2) return;
-    const r = await act.run(() => api.vaultInit(pw));
+    // Creating the vault leaves it locked; open a default lease so it is usable right away.
+    const r = await act.run(() => api.vaultInit(pw).then(() => api.vaultUnlock(pw, 30)));
     setPw("");
     setPw2("");
     if (r) onDone(r);

@@ -3,8 +3,7 @@
 // as `tpd-event` and are fanned out from a single Tauri listener.
 
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { invoke, listen } from "./transport";
 import type * as T from "./types";
 
 // ------------------------------------------------------------ names
@@ -136,7 +135,7 @@ export const api = {
   taskCancel: (id: string, reason?: string) => rpc<T.TaskSummary>(M.TASK_CANCEL, { id, reason }),
   taskRetry: (id: string) => rpc<T.TaskSummary>(M.TASK_RETRY, { id }),
   taskDiff: (id: string) => rpc<T.TaskDiff>(M.TASK_DIFF, { id }),
-  taskMessage: (id: string, text: string) => rpc<T.Run>(M.TASK_MESSAGE, { id, text }),
+  taskMessage: (id: string, text: string) => rpc<T.TaskSummary>(M.TASK_MESSAGE, { id, text }),
   taskOpenTerminal: (id: string) => rpc<{ opened: boolean }>(M.TASK_OPEN_TERMINAL, { id }),
 
   runEvents: (run_id: string, after_seq?: number, limit?: number) =>

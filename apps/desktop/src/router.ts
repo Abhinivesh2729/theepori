@@ -2,6 +2,7 @@
 // and keeps the app free of a routing dependency.
 
 import { createContext, useContext, useEffect, useState } from "react";
+import type { IconName } from "./icons";
 import type { Alert, Link, Project } from "./types";
 
 export interface AlertEntry {
@@ -28,17 +29,17 @@ export interface Route {
   id?: string;
 }
 
-export const VIEWS: { name: ViewName; label: string; key: string }[] = [
-  { name: "overview", label: "Mission Control", key: "o" },
-  { name: "plan", label: "Daily Plan", key: "p" },
-  { name: "approvals", label: "Approvals", key: "a" },
-  { name: "tasks", label: "Tasks", key: "t" },
-  { name: "projects", label: "Projects", key: "j" },
-  { name: "chat", label: "Manager Chat", key: "c" },
-  { name: "memory", label: "Memory", key: "m" },
-  { name: "usage", label: "Usage & Cost", key: "u" },
-  { name: "vault", label: "Vault", key: "v" },
-  { name: "settings", label: "Settings & Safety", key: "s" },
+export const VIEWS: { name: ViewName; label: string; key: string; icon: IconName; group: "main" | "factory" }[] = [
+  { name: "overview", label: "Home", key: "o", icon: "home", group: "main" },
+  { name: "approvals", label: "Approvals", key: "a", icon: "inbox", group: "main" },
+  { name: "plan", label: "Daily plan", key: "p", icon: "calendar", group: "main" },
+  { name: "tasks", label: "Tasks", key: "t", icon: "list", group: "main" },
+  { name: "projects", label: "Projects", key: "j", icon: "folder", group: "main" },
+  { name: "chat", label: "Manager", key: "c", icon: "chat", group: "main" },
+  { name: "memory", label: "Memory", key: "m", icon: "brain", group: "factory" },
+  { name: "usage", label: "Usage & cost", key: "u", icon: "chart", group: "factory" },
+  { name: "vault", label: "Vault", key: "v", icon: "lock", group: "factory" },
+  { name: "settings", label: "Settings & safety", key: "s", icon: "settings", group: "factory" },
 ];
 
 const NAMES = new Set<string>(VIEWS.map((v) => v.name));

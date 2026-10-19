@@ -1,7 +1,7 @@
 // Tasks: filterable, virtualized table + create dialog. `#/tasks/<id>` opens
 // the Coding Workspace (separate chunk).
 
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { api, useAction, useQuery, useTpdEvents } from "../api";
 import { navigate, useApp, type Route } from "../router";
 import { CATEGORIES, TASK_STATES, type Category, type TaskCreate, type TaskState, type TaskSummary } from "../types";
@@ -16,8 +16,10 @@ import {
   Modal,
   PageHeader,
   relTime,
+  isActiveState,
   RiskChip,
   StateChip,
+  taskTone,
 } from "../ui";
 
 const TaskDetail = lazy(() => import("./TaskDetail"));
@@ -44,6 +46,8 @@ function TaskList() {
   const [category, setCategory] = useState<Category | "">("");
   const [text, setText] = useState("");
   const [limit, setLimit] = useState(500);
+  // Follow the global project scope from the top bar.
+  useEffect(() => setProject(app.project), [app.project]);
   const [creating, setCreating] = useState(false);
 
   const tasks = useQuery(
@@ -83,7 +87,7 @@ function TaskList() {
   }, [tasks.data, category, text, state]);
 
   return (
-    <div className="page fill">
+    <div className="page fill wide">
       <PageHeader
         title="Tasks"
         actions={
@@ -146,11 +150,9 @@ function TaskList() {
           <div className="vt-row vt-head" role="row">
             <span role="columnheader">Task</span>
             <span role="columnheader">Project</span>
-            <span role="columnheader">Category</span>
-            <span role="columnheader">P</span>
-            <span role="columnheader">Risk</span>
             <span role="columnheader">State</span>
-            <span role="columnheader">Links</span>
+            <span role="columnheader">Risk</span>
+            <span role="columnheader" title="Priority (1 = most urgent)">P</span>
             <span role="columnheader">Updated</span>
           </div>
           <VirtualList
@@ -185,24 +187,23 @@ function matches(t: TaskSummary, project: string, state: StateFilter): boolean {
 function TaskRow({ t }: { t: TaskSummary }) {
   return (
     <a className="vt-row" role="row" href={`#/tasks/${encodeURIComponent(t.id)}`}>
-      <span role="cell" className="vt-title" title={t.title}>
-        <span className="mono muted">{t.id}</span> {t.title}
+      <span role="cell" className="vt-title" title={t.blocked_reason ? `${t.title}\n${t.blocked_reason}` : t.title}>
+        <span className={`dot ${isActiveState(t.state) ? "live" : taskTone(t.state)}`} />
+        <span className="mono muted small">{t.id}</span>
+        <span className="vt-text">{t.title}</span>
+        <span className="muted small">{t.category}</span>
+        {t.jira_key && <Chip tone="accent">{t.jira_key}</Chip>}
+        {t.pr_url && <Chip tone="info">PR</Chip>}
       </span>
-      <span role="cell">{t.project}</span>
+      <span role="cell" className="muted">{t.project}</span>
       <span role="cell">
-        <Chip>{t.category}</Chip>
-      </span>
-      <span role="cell">P{t.priority}</span>
-      <span role="cell">
-        <RiskChip risk={t.risk} />
-      </span>
-      <span role="cell" title={t.blocked_reason}>
         <StateChip state={t.state} />
         {t.attempts > 1 && <span className="muted small"> ×{t.attempts}</span>}
       </span>
-      <span role="cell" className="muted small">
-        {t.jira_key ?? ""} {t.pr_url ? "PR" : ""}
+      <span role="cell">
+        <RiskChip risk={t.risk} />
       </span>
+      <span role="cell" className="muted">P{t.priority}</span>
       <span role="cell" className="muted small">
         {relTime(t.updated_at)}
       </span>
@@ -272,7 +273,7 @@ export function CreateTask({
               onChange={(e) => setF({ ...f, priority: e.target.value ? Number(e.target.value) : undefined })}
             >
               <option value="">Auto</option>
-              {[1, 2, 3, 4, 5].map((n) => (
+              {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                 <option key={n} value={n}>
                   P{n}
                 </option>

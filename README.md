@@ -33,6 +33,14 @@ make lint
 make perf                  # release perf report -> docs/perf/m0.json
 ```
 
+To work on the UI in a browser against a scratch factory (never `~/factory`):
+
+```bash
+tp --factory /tmp/f setup && tpd --factory /tmp/f &
+python3 scripts/dev-bridge.py --factory /tmp/f &   # 127.0.0.1:1421, proxied by Vite at /__tp
+npm --prefix apps/desktop run dev                   # http://localhost:1420
+```
+
 See [AGENTS.md](AGENTS.md) for conventions. Work is tracked in Jira project **SF**.
 
 ## License

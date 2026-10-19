@@ -14,10 +14,16 @@
       {
         "label": "main",
         "title": "Thee Pori",
-        "width": 1100,
-        "height": 720,
-        "minWidth": 720,
-        "minHeight": 480
+        "width": 1200,
+        "height": 780,
+        "minWidth": 760,
+        "minHeight": 520,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": {
+          "x": 18,
+          "y": 24
+        }
       }
     ],
     "security": {
@@ -26,10 +32,23 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app"],
+    "targets": [
+      "app"
+    ],
     "category": "DeveloperTool",
-    "externalBin": ["binaries/tp", "binaries/tpd"],
-    "macOS": { "minimumSystemVersion": "13.0" },
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.png"]
+    "externalBin": [
+      "binaries/tp",
+      "binaries/tpd"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "13.0"
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.png"
+    ]
   }
 }

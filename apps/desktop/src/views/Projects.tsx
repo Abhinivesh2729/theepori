@@ -1,8 +1,10 @@
 // Projects: registry, add, and per-project config / dependencies / deployments.
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { api, useAction, useQuery } from "../api";
-import { navigate, useApp, type Route } from "../router";
+import { Icon } from "../icons";
+import { inTauri } from "../transport";
+import { href, navigate, useApp, type Route } from "../router";
 import type { DepItem, DepReport, ProjectAdd, ProjectDetail } from "../types";
 import {
   A,
@@ -41,32 +43,33 @@ function ProjectList() {
         }
       />
       {projects.length === 0 ? (
-        <Empty>No projects yet. Add a local git repository to start.</Empty>
+        <div className="rows">
+          <button className="rowlink" onClick={() => setAdding(true)} disabled={link.state !== "online"}>
+            <Icon name="plus" />
+            <span className="grow">
+              <span className="title">Add your first project</span>
+              <span className="sub">Register a local git checkout so the factory can work on it.</span>
+            </span>
+          </button>
+        </div>
       ) : (
-        <table className="dense">
-          <thead>
-            <tr>
-              <th>Slug</th>
-              <th>Name</th>
-              <th>Jira</th>
-              <th>Repository</th>
-              <th>Added</th>
-            </tr>
-          </thead>
-          <tbody>
-            {projects.map((p) => (
-              <tr key={p.slug}>
-                <td>
-                  <A to={{ view: "projects", id: p.slug }}>{p.slug}</A>
-                </td>
-                <td>{p.name}</td>
-                <td>{p.jira_key ?? "–"}</td>
-                <td className="path">{p.repo_path}</td>
-                <td className="muted">{fmtTime(p.created_at)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="rows">
+          {projects.map((p) => (
+            <a key={p.slug} className="rowlink" href={href({ view: "projects", id: p.slug })}>
+              <Icon name="folder" className="muted" />
+              <span className="grow">
+                <span className="title">
+                  {p.name}
+                  {p.name !== p.slug && <span className="muted mono small"> {p.slug}</span>}
+                </span>
+                <span className="sub mono">{p.repo_path}</span>
+              </span>
+              {p.jira_key && <Chip tone="accent">{p.jira_key}</Chip>}
+              <span className="muted small">{fmtTime(p.created_at)}</span>
+              <Icon name="chevronRight" className="go" />
+            </a>
+          ))}
+        </div>
       )}
       {adding && <AddProject onClose={() => setAdding(false)} />}
     </div>
@@ -75,7 +78,31 @@ function ProjectList() {
 
 function AddProject({ onClose }: { onClose: () => void }) {
   const [f, setF] = useState<ProjectAdd>({ repo_path: "" });
+  const [over, setOver] = useState(false);
   const act = useAction();
+  // In the app, dropping a folder from Finder fills the path.
+  useEffect(() => {
+    if (!inTauri) return;
+    let off: (() => void) | undefined;
+    let live = true;
+    void import("@tauri-apps/api/webview").then(({ getCurrentWebview }) =>
+      getCurrentWebview()
+        .onDragDropEvent((ev) => {
+          const p = ev.payload;
+          if (p.type === "over" || p.type === "enter") setOver(true);
+          else if (p.type === "leave") setOver(false);
+          else if (p.type === "drop") {
+            setOver(false);
+            if (p.paths[0]) setF((x) => ({ ...x, repo_path: p.paths[0] }));
+          }
+        })
+        .then((u) => (live ? (off = u) : u())),
+    );
+    return () => {
+      live = false;
+      off?.();
+    };
+  }, []);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const clean: ProjectAdd = {
@@ -93,13 +120,14 @@ function AddProject({ onClose }: { onClose: () => void }) {
   return (
     <Modal title="Add project" onClose={onClose}>
       <form className="form" onSubmit={(e) => void submit(e)}>
-        <Field label="Repository path" hint="Absolute path to a local git checkout.">
+        <Field label="Repository path" hint={inTauri ? "Absolute path to a local git checkout, or drop its folder on this window." : "Absolute path to a local git checkout."}>
           <input
             value={f.repo_path}
             onChange={(e) => setF({ ...f, repo_path: e.target.value })}
             placeholder="/Users/you/code/app"
             required
             className="mono"
+            style={over ? { borderColor: "var(--accent)", boxShadow: "0 0 0 3px var(--accent-soft)" } : undefined}
           />
         </Field>
         <Field label="Jira project key">
@@ -141,9 +169,6 @@ function ProjectView({ slug }: { slug: string }) {
 
   return (
     <div className="page">
-      <A to={{ view: "projects" }} className="back">
-        ← Projects
-      </A>
       <PageHeader
         title={p.name}
         sub={
@@ -281,6 +306,12 @@ function Deps({ slug }: { slug: string }) {
         <div className="note info">
           Scanned {report.manifests.length} manifests · {report.packages} packages · {report.advisories} advisories ·{" "}
           {fmtTime(report.scanned_at)}
+          {report.manifests.length > 0 && report.packages === 0 && (
+            <p className="small">
+              No resolved versions found. Versions come from lockfiles: commit <code>package-lock.json</code>, <code>Cargo.lock</code>,{" "}
+              <code>poetry.lock</code> or pinned <code>requirements.txt</code> (for npm: <code>npm install --package-lock-only</code>).
+            </p>
+          )}
           {report.warnings && report.warnings.length > 0 && (
             <ul>
               {report.warnings.map((w, i) => (

@@ -30,7 +30,7 @@ export default function Usage() {
   return (
     <div className="page">
       <PageHeader
-        title="Usage & Cost"
+        title="Usage & cost"
         sub="Figures come from what the Claude Code runtime reports per run."
         actions={
           <>
