@@ -787,6 +787,7 @@ version = "0.2.0-dev"
 dependencies = [
  "anyhow",
  "clap",
+ "serde",
  "serde_json",
  "tempfile",
  "tp-core",

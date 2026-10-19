@@ -8,6 +8,13 @@ use crate::{Error, Result};
 
 pub const DEFAULT_LABEL: &str = "space.0xabhi.tpd";
 
+/// Where `install` copies tpd. launchd agents cannot execute binaries inside
+/// TCC-protected folders (~/Documents, ~/Desktop, ~/Downloads) without a
+/// privacy grant, and a dev build usually lives there.
+pub fn bin_dir(home: &Path) -> PathBuf {
+    home.join("Library/Application Support/theepori/bin")
+}
+
 pub fn plist_path(home: &Path, label: &str) -> PathBuf {
     home.join("Library/LaunchAgents").join(format!("{label}.plist"))
 }
@@ -50,11 +57,18 @@ fn launchctl(args: &[&str]) -> Result<std::process::Output> {
     Command::new("launchctl").args(args).output().map_err(|e| Error::Invalid(format!("launchctl: {e}")))
 }
 
-/// Writes the plist and (re)loads the agent.
-pub fn install(home: &Path, label: &str, tpd: &Path, paths: &FactoryPaths) -> Result<PathBuf> {
-    if !tpd.is_file() {
-        return Err(Error::Invalid(format!("{} not found; build it with `make build`", tpd.display())));
+/// Copies tpd to [`bin_dir`], writes the plist and (re)loads the agent.
+pub fn install(home: &Path, label: &str, tpd_src: &Path, paths: &FactoryPaths) -> Result<PathBuf> {
+    if !tpd_src.is_file() {
+        return Err(Error::Invalid(format!("{} not found; build it with `make build`", tpd_src.display())));
     }
+    let dir = bin_dir(home);
+    std::fs::create_dir_all(&dir).map_err(|e| Error::io(&dir, e))?;
+    let tpd = dir.join("tpd");
+    let tmp = dir.join(".tpd.new");
+    std::fs::copy(tpd_src, &tmp).map_err(|e| Error::io(&tmp, e))?;
+    std::fs::rename(&tmp, &tpd).map_err(|e| Error::io(&tpd, e))?;
+    let tpd = tpd.as_path();
     let path = plist_path(home, label);
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir).map_err(|e| Error::io(dir, e))?;
