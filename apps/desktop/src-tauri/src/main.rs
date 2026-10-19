@@ -17,7 +17,7 @@ static STARTED: OnceLock<Instant> = OnceLock::new();
 
 struct Socket(PathBuf);
 
-fn connect(sock: &PathBuf) -> Result<Client, String> {
+fn connect(sock: &std::path::Path) -> Result<Client, String> {
     Client::connect(sock, Duration::from_secs(5)).map_err(|e| e.to_string())
 }
 
