@@ -6,11 +6,15 @@ pub mod client;
 pub mod config;
 pub mod db;
 pub mod doctor;
+pub mod git;
 pub mod launchd;
 pub mod paths;
+pub mod policy;
+pub mod project_config;
 pub mod redact;
 pub mod registry;
 pub mod setup;
+pub mod store;
 
 mod error;
 pub use error::{Error, Result};
