@@ -10,3 +10,4 @@ site/.wrangler/
 target/
 node_modules/
 apps/desktop/dist/
+apps/desktop/src-tauri/gen/

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/tp-core", "crates/tp-proto", "crates/tpd", "crates/tp-cli"]
+members = ["crates/tp-core", "crates/tp-proto", "crates/tpd", "crates/tp-cli", "apps/desktop/src-tauri"]
 
 [workspace.package]
 version = "0.2.0-dev"
