@@ -1,0 +1,7 @@
+{
+  "name": "legacy-app",
+  "version": "0.3.0",
+  "dependencies": {
+    "express": "4.17.1"
+  }
+}

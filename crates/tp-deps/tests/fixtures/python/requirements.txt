@@ -1,0 +1,12 @@
+# Fixture requirements
+-r base.txt
+--index-url https://pypi.org/simple
+
+Django==3.2.0
+requests[socks]==2.25.1 ; python_version >= "3.7"
+flask>=2.0  # range, not pinned
+PyYAML==5.3.1 \
+    --hash=sha256:0000000000000000000000000000000000000000000000000000000000000000
+numpy==1.*
+-e git+https://example.com/repo.git#egg=editable
+Jinja2 == 2.11.2    # spaces around operator

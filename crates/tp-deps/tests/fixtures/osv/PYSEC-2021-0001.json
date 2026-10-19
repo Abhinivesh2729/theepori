@@ -1,0 +1,39 @@
+{
+  "id": "PYSEC-2021-0001",
+  "details": "\nDjango 3.2 before 3.2.2 and 3.1 before 3.1.10 allow path traversal in uploads.\nMore details follow.",
+  "aliases": ["CVE-2021-31542", "GHSA-rxjp-mfm9-w4wr"],
+  "modified": "2024-01-01T00:00:00Z",
+  "severity": [
+    {
+      "type": "CVSS_V3",
+      "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N"
+    }
+  ],
+  "affected": [
+    {
+      "package": { "ecosystem": "PyPI", "name": "Django" },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            { "introduced": "3.2" },
+            { "fixed": "3.2.2" },
+            { "introduced": "3.1" },
+            { "fixed": "3.1.10" },
+            { "introduced": "2.2" },
+            { "fixed": "2.2.21" }
+          ]
+        },
+        {
+          "type": "GIT",
+          "repo": "https://github.com/django/django",
+          "events": [
+            { "introduced": "0" },
+            { "fixed": "0123456789abcdef0123456789abcdef01234567" }
+          ]
+        }
+      ],
+      "versions": ["3.2", "3.2.0", "3.2.1"]
+    }
+  ]
+}
