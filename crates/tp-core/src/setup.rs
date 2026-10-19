@@ -52,7 +52,8 @@ pub fn setup(paths: &FactoryPaths, actor: &str) -> Result<SetupReport> {
     if report.changed() {
         AuditLog::new(paths).append(
             &mut conn,
-            NewEvent::new(ActorKind::Human, actor, "factory.setup").details(serde_json::to_value(&report)?),
+            NewEvent::new(ActorKind::Human, actor, "factory.setup")
+                .details(serde_json::to_value(&report)?),
         )?;
     }
     Ok(report)
@@ -82,7 +83,11 @@ mod tests {
 
         let conn = db::open(&paths.db()).unwrap();
         assert_eq!(AuditLog::new(&paths).count(&conn).unwrap(), 1);
-        let mode = std::fs::metadata(paths.root()).unwrap().permissions().mode() & 0o777;
+        let mode = std::fs::metadata(paths.root())
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777;
         assert_eq!(mode, 0o700);
     }
 
@@ -106,7 +111,8 @@ mod tests {
                 if p.is_dir() {
                     out.push((rel, 0));
                     stack.push(p);
-                } else if !rel.ends_with("-wal") && !rel.ends_with("-shm") && !rel.ends_with(".db") {
+                } else if !rel.ends_with("-wal") && !rel.ends_with("-shm") && !rel.ends_with(".db")
+                {
                     out.push((rel, std::fs::metadata(&p).unwrap().len()));
                 }
             }

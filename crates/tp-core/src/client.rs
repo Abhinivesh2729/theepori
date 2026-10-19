@@ -25,21 +25,38 @@ impl Client {
                 socket.display()
             ))
         })?;
-        stream.set_read_timeout(Some(timeout)).map_err(|e| Error::io(socket, e))?;
-        stream.set_write_timeout(Some(timeout)).map_err(|e| Error::io(socket, e))?;
+        stream
+            .set_read_timeout(Some(timeout))
+            .map_err(|e| Error::io(socket, e))?;
+        stream
+            .set_write_timeout(Some(timeout))
+            .map_err(|e| Error::io(socket, e))?;
         let reader = BufReader::new(stream.try_clone().map_err(|e| Error::io(socket, e))?);
-        Ok(Self { writer: stream, reader, next_id: 1 })
+        Ok(Self {
+            writer: stream,
+            reader,
+            next_id: 1,
+        })
     }
 
     pub fn call_raw(&mut self, method: &str, params: Value) -> Result<Value> {
         let id = self.next_id;
         self.next_id += 1;
-        let mut line = serde_json::to_vec(&Request { id, method: method.into(), params })?;
+        let mut line = serde_json::to_vec(&Request {
+            id,
+            method: method.into(),
+            params,
+        })?;
         line.push(b'\n');
-        self.writer.write_all(&line).map_err(|e| Error::Daemon(format!("send: {e}")))?;
+        self.writer
+            .write_all(&line)
+            .map_err(|e| Error::Daemon(format!("send: {e}")))?;
         let resp: Response = serde_json::from_str(&self.read_line()?)?;
         if resp.id != id {
-            return Err(Error::Daemon(format!("response id {} for request {id}", resp.id)));
+            return Err(Error::Daemon(format!(
+                "response id {} for request {id}",
+                resp.id
+            )));
         }
         match (resp.result, resp.error) {
             (_, Some(e)) => Err(Error::Daemon(format!("{:?}: {}", e.code, e.message))),
@@ -63,12 +80,17 @@ impl Client {
     }
 
     pub fn set_timeout(&self, timeout: Option<Duration>) -> Result<()> {
-        self.writer.set_read_timeout(timeout).map_err(|e| Error::Daemon(e.to_string()))
+        self.writer
+            .set_read_timeout(timeout)
+            .map_err(|e| Error::Daemon(e.to_string()))
     }
 
     fn read_line(&mut self) -> Result<String> {
         let mut line = String::new();
-        let n = self.reader.read_line(&mut line).map_err(|e| Error::Daemon(format!("receive: {e}")))?;
+        let n = self
+            .reader
+            .read_line(&mut line)
+            .map_err(|e| Error::Daemon(format!("receive: {e}")))?;
         if n == 0 {
             return Err(Error::Daemon("tpd closed the connection".into()));
         }

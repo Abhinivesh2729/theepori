@@ -39,7 +39,10 @@ pub struct NewEvent {
 impl NewEvent {
     pub fn new(kind: ActorKind, actor_id: impl Into<String>, action: impl Into<String>) -> Self {
         Self {
-            actor: Actor { kind, id: actor_id.into() },
+            actor: Actor {
+                kind,
+                id: actor_id.into(),
+            },
             action: action.into(),
             resource: None,
             outcome: Outcome::Ok,
@@ -90,7 +93,10 @@ pub struct AuditLog {
 
 impl AuditLog {
     pub fn new(paths: &FactoryPaths) -> Self {
-        Self { dir: paths.audit_dir(), redactor: Redactor::new() }
+        Self {
+            dir: paths.audit_dir(),
+            redactor: Redactor::new(),
+        }
     }
 
     pub fn with_redactor(mut self, r: Redactor) -> Self {
@@ -128,7 +134,8 @@ impl AuditLog {
             .mode(0o600)
             .open(&file)
             .map_err(|e| Error::io(&file, e))?;
-        f.write_all(format!("{line}\n").as_bytes()).map_err(|e| Error::io(&file, e))?;
+        f.write_all(format!("{line}\n").as_bytes())
+            .map_err(|e| Error::io(&file, e))?;
         f.sync_data().map_err(|e| Error::io(&file, e))?;
         index(&tx, &rec, &file, &line)?;
         tx.commit()?;
@@ -136,8 +143,7 @@ impl AuditLog {
     }
 
     pub fn tail(&self, conn: &Connection, limit: u32) -> Result<Vec<AuditRecord>> {
-        let mut stmt =
-            conn.prepare("SELECT record FROM audit_index ORDER BY seq DESC LIMIT ?1")?;
+        let mut stmt = conn.prepare("SELECT record FROM audit_index ORDER BY seq DESC LIMIT ?1")?;
         let rows = stmt.query_map([limit], |r| r.get::<_, String>(0))?;
         let mut out = Vec::new();
         for row in rows {
@@ -148,7 +154,9 @@ impl AuditLog {
     }
 
     pub fn count(&self, conn: &Connection) -> Result<u64> {
-        Ok(conn.query_row("SELECT COUNT(*) FROM audit_index", [], |r| r.get::<_, i64>(0))? as u64)
+        Ok(conn.query_row("SELECT COUNT(*) FROM audit_index", [], |r| {
+            r.get::<_, i64>(0)
+        })? as u64)
     }
 
     /// Recomputes the whole chain from the JSONL files and checks the index.
@@ -168,10 +176,16 @@ impl AuditLog {
                     return Ok(broken(seq, format!("{at}: seq {} follows {seq}", rec.seq)));
                 }
                 if rec.prev_hash != prev {
-                    return Ok(broken(seq, format!("{at}: prev_hash does not match record {seq}")));
+                    return Ok(broken(
+                        seq,
+                        format!("{at}: prev_hash does not match record {seq}"),
+                    ));
                 }
                 if hash_record(&rec)? != rec.hash {
-                    return Ok(broken(seq, format!("{at}: record {} was modified", rec.seq)));
+                    return Ok(broken(
+                        seq,
+                        format!("{at}: record {} was modified", rec.seq),
+                    ));
                 }
                 prev = rec.hash;
                 seq = rec.seq;
@@ -181,14 +195,21 @@ impl AuditLog {
         if db_seq != seq || (seq > 0 && db_hash != prev) {
             return Ok(broken(
                 seq,
-                format!("index head is record {db_seq} but the files end at record {seq}; run `tp doctor`"),
+                format!(
+                    "index head is record {db_seq} but the files end at record {seq}; run `tp doctor`"
+                ),
             ));
         }
-        Ok(AuditVerify { ok: true, records: seq, problem: None })
+        Ok(AuditVerify {
+            ok: true,
+            records: seq,
+            problem: None,
+        })
     }
 
     fn file_for(&self, ts: &str) -> PathBuf {
-        self.dir.join(format!("{}.jsonl", ts.get(..7).unwrap_or("unknown")))
+        self.dir
+            .join(format!("{}.jsonl", ts.get(..7).unwrap_or("unknown")))
     }
 
     fn files(&self) -> Result<Vec<PathBuf>> {
@@ -208,8 +229,12 @@ impl AuditLog {
     /// one unindexed record at the end of the newest file. Index it so the
     /// next append continues the chain instead of forking it.
     fn recover_tail(&self, tx: &Transaction<'_>) -> Result<()> {
-        let Some(file) = self.files()?.pop() else { return Ok(()) };
-        let Some(line) = last_line(&file)? else { return Ok(()) };
+        let Some(file) = self.files()?.pop() else {
+            return Ok(());
+        };
+        let Some(line) = last_line(&file)? else {
+            return Ok(());
+        };
         let rec: AuditRecord = serde_json::from_str(&line)?;
         let (seq, prev) = head(tx)?;
         if rec.seq == seq + 1 && rec.prev_hash == prev && hash_record(&rec)? == rec.hash {
@@ -220,24 +245,42 @@ impl AuditLog {
 }
 
 fn broken(records: u64, problem: String) -> AuditVerify {
-    AuditVerify { ok: false, records, problem: Some(problem) }
+    AuditVerify {
+        ok: false,
+        records,
+        problem: Some(problem),
+    }
 }
 
 fn head(conn: &Connection) -> Result<(u64, String)> {
     Ok(conn
-        .query_row("SELECT seq, hash FROM audit_index ORDER BY seq DESC LIMIT 1", [], |r| {
-            Ok((r.get::<_, i64>(0)? as u64, r.get(1)?))
-        })
+        .query_row(
+            "SELECT seq, hash FROM audit_index ORDER BY seq DESC LIMIT 1",
+            [],
+            |r| Ok((r.get::<_, i64>(0)? as u64, r.get(1)?)),
+        )
         .optional()?
         .unwrap_or((0, GENESIS.to_string())))
 }
 
 fn index(conn: &Connection, rec: &AuditRecord, file: &Path, line: &str) -> Result<()> {
-    let name = file.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+    let name = file
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or_default();
     conn.execute(
         "INSERT INTO audit_index (seq, ts, action, project, task, file, hash, record)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-        params![rec.seq as i64, rec.ts, rec.action, rec.project, rec.task, name, rec.hash, line],
+        params![
+            rec.seq as i64,
+            rec.ts,
+            rec.action,
+            rec.project,
+            rec.task,
+            name,
+            rec.hash,
+            line
+        ],
     )?;
     Ok(())
 }
@@ -262,10 +305,16 @@ fn last_line(path: &Path) -> Result<Option<String>> {
     }
     // Records are small; 64 KiB comfortably holds the last one.
     let start = len.saturating_sub(64 * 1024);
-    f.seek(SeekFrom::Start(start)).map_err(|e| Error::io(path, e))?;
+    f.seek(SeekFrom::Start(start))
+        .map_err(|e| Error::io(path, e))?;
     let mut buf = String::new();
     f.read_to_string(&mut buf).map_err(|e| Error::io(path, e))?;
-    Ok(buf.trim_end().rsplit('\n').next().map(str::to_owned).filter(|l| !l.is_empty()))
+    Ok(buf
+        .trim_end()
+        .rsplit('\n')
+        .next()
+        .map(str::to_owned)
+        .filter(|l| !l.is_empty()))
 }
 
 #[cfg(test)]
@@ -286,8 +335,12 @@ mod tests {
     fn chain_links_and_verifies() {
         let (_d, paths, mut conn) = setup();
         let log = AuditLog::new(&paths);
-        let a = log.append(&mut conn, NewEvent::system("factory.setup")).unwrap();
-        let b = log.append(&mut conn, NewEvent::system("project.added").project("app")).unwrap();
+        let a = log
+            .append(&mut conn, NewEvent::system("factory.setup"))
+            .unwrap();
+        let b = log
+            .append(&mut conn, NewEvent::system("project.added").project("app"))
+            .unwrap();
         assert_eq!((a.seq, b.seq), (1, 2));
         assert_eq!(a.prev_hash, GENESIS);
         assert_eq!(b.prev_hash, a.hash);
@@ -300,10 +353,14 @@ mod tests {
     #[test]
     fn continues_across_reopen() {
         let (d, paths, mut conn) = setup();
-        AuditLog::new(&paths).append(&mut conn, NewEvent::system("one")).unwrap();
+        AuditLog::new(&paths)
+            .append(&mut conn, NewEvent::system("one"))
+            .unwrap();
         drop(conn);
         let mut conn = db::open(&d.path().join("s.db")).unwrap();
-        let rec = AuditLog::new(&paths).append(&mut conn, NewEvent::system("two")).unwrap();
+        let rec = AuditLog::new(&paths)
+            .append(&mut conn, NewEvent::system("two"))
+            .unwrap();
         assert_eq!(rec.seq, 2);
         assert!(AuditLog::new(&paths).verify(&conn).unwrap().ok);
     }
@@ -317,7 +374,11 @@ mod tests {
         }
         let file = log.files().unwrap().pop().unwrap();
         let text = fs::read_to_string(&file).unwrap();
-        fs::write(&file, text.replacen("\"action\":\"b\"", "\"action\":\"x\"", 1)).unwrap();
+        fs::write(
+            &file,
+            text.replacen("\"action\":\"b\"", "\"action\":\"x\"", 1),
+        )
+        .unwrap();
         let v = log.verify(&conn).unwrap();
         assert!(!v.ok);
         assert!(v.problem.unwrap().contains("record 2 was modified"));
@@ -331,7 +392,11 @@ mod tests {
             log.append(&mut conn, NewEvent::system(a)).unwrap();
         }
         let file = log.files().unwrap().pop().unwrap();
-        let lines: Vec<_> = fs::read_to_string(&file).unwrap().lines().map(String::from).collect();
+        let lines: Vec<_> = fs::read_to_string(&file)
+            .unwrap()
+            .lines()
+            .map(String::from)
+            .collect();
         fs::write(&file, format!("{}\n{}\n", lines[0], lines[2])).unwrap();
         assert!(!log.verify(&conn).unwrap().ok);
     }
@@ -343,7 +408,8 @@ mod tests {
         log.append(&mut conn, NewEvent::system("a")).unwrap();
         log.append(&mut conn, NewEvent::system("b")).unwrap();
         // Simulate a crash after the line was written but before the commit.
-        conn.execute("DELETE FROM audit_index WHERE seq = 2", []).unwrap();
+        conn.execute("DELETE FROM audit_index WHERE seq = 2", [])
+            .unwrap();
         let c = log.append(&mut conn, NewEvent::system("c")).unwrap();
         assert_eq!(c.seq, 3);
         assert!(log.verify(&conn).unwrap().ok);

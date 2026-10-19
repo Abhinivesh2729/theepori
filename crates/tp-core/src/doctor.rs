@@ -36,21 +36,44 @@ pub struct Check {
 
 impl Check {
     fn ok(name: &str, detail: impl Into<String>) -> Self {
-        Self { name: name.into(), status: Status::Ok, detail: detail.into(), fix: None }
+        Self {
+            name: name.into(),
+            status: Status::Ok,
+            detail: detail.into(),
+            fix: None,
+        }
     }
     fn warn(name: &str, detail: impl Into<String>, fix: impl Into<String>) -> Self {
-        Self { name: name.into(), status: Status::Warn, detail: detail.into(), fix: Some(fix.into()) }
+        Self {
+            name: name.into(),
+            status: Status::Warn,
+            detail: detail.into(),
+            fix: Some(fix.into()),
+        }
     }
     fn fail(name: &str, detail: impl Into<String>, fix: impl Into<String>) -> Self {
-        Self { name: name.into(), status: Status::Fail, detail: detail.into(), fix: Some(fix.into()) }
+        Self {
+            name: name.into(),
+            status: Status::Fail,
+            detail: detail.into(),
+            fix: Some(fix.into()),
+        }
     }
 }
 
 pub fn run_all(paths: &FactoryPaths, home: &Path) -> Vec<Check> {
     let mut checks = factory(paths);
     checks.push(claude());
-    checks.push(tool("gh", &["auth", "status"], "install with `brew install gh`, then `gh auth login`"));
-    checks.push(tool("git", &["--version"], "install the Xcode command line tools: `xcode-select --install`"));
+    checks.push(tool(
+        "gh",
+        &["auth", "status"],
+        "install with `brew install gh`, then `gh auth login`",
+    ));
+    checks.push(tool(
+        "git",
+        &["--version"],
+        "install the Xcode command line tools: `xcode-select --install`",
+    ));
     checks.push(claude_user_settings(&home.join(".claude/settings.json")));
     checks.push(cloudflared_config(&home.join(".cloudflared/config.yml")));
     checks.push(daemon(paths));
@@ -64,11 +87,22 @@ pub fn worst(checks: &[Check]) -> Status {
 pub fn factory(paths: &FactoryPaths) -> Vec<Check> {
     let setup_fix = "run `tp setup`";
     if !paths.root().is_dir() {
-        return vec![Check::fail("factory", format!("{} does not exist", paths.root().display()), setup_fix)];
+        return vec![Check::fail(
+            "factory",
+            format!("{} does not exist", paths.root().display()),
+            setup_fix,
+        )];
     }
     let mut out = vec![match FactoryConfig::load(&paths.config()) {
-        Ok(c) => Check::ok("config", format!("{} (schema {})", paths.config().display(), c.schema)),
-        Err(e) => Check::fail("config", e.to_string(), "fix factory.yaml or move it aside and run `tp setup`"),
+        Ok(c) => Check::ok(
+            "config",
+            format!("{} (schema {})", paths.config().display(), c.schema),
+        ),
+        Err(e) => Check::fail(
+            "config",
+            e.to_string(),
+            "fix factory.yaml or move it aside and run `tp setup`",
+        ),
     }];
     let conn = match db::open(&paths.db()) {
         Ok(c) => c,
@@ -78,17 +112,29 @@ pub fn factory(paths: &FactoryPaths) -> Vec<Check> {
         }
     };
     match db::version(&conn) {
-        Ok(v) if v == db::latest_version() => out.push(Check::ok("database", format!("schema v{v}"))),
+        Ok(v) if v == db::latest_version() => {
+            out.push(Check::ok("database", format!("schema v{v}")))
+        }
         Ok(v) if v > db::latest_version() => out.push(Check::fail(
             "database",
-            format!("schema v{v} is newer than this tp (v{})", db::latest_version()),
+            format!(
+                "schema v{v} is newer than this tp (v{})",
+                db::latest_version()
+            ),
             "upgrade tp",
         )),
-        Ok(v) => out.push(Check::warn("database", format!("schema v{v}, migrations pending"), setup_fix)),
+        Ok(v) => out.push(Check::warn(
+            "database",
+            format!("schema v{v}, migrations pending"),
+            setup_fix,
+        )),
         Err(e) => out.push(Check::fail("database", e.to_string(), setup_fix)),
     }
     match AuditLog::new(paths).verify(&conn) {
-        Ok(v) if v.ok => out.push(Check::ok("audit chain", format!("{} records verified", v.records))),
+        Ok(v) if v.ok => out.push(Check::ok(
+            "audit chain",
+            format!("{} records verified", v.records),
+        )),
         Ok(v) => out.push(Check::fail(
             "audit chain",
             v.problem.unwrap_or_default(),
@@ -115,7 +161,11 @@ fn tool(bin: &str, args: &[&str], fix: &str) -> Check {
         Ok(o) if o.status.success() => Check::ok(bin, path.display().to_string()),
         Ok(o) => Check::fail(
             bin,
-            format!("`{bin} {}` failed: {}", args.join(" "), first_line(&o.stderr, &o.stdout)),
+            format!(
+                "`{bin} {}` failed: {}",
+                args.join(" "),
+                first_line(&o.stderr, &o.stdout)
+            ),
             fix,
         ),
         Err(e) => Check::fail(bin, e.to_string(), fix),
@@ -136,7 +186,11 @@ fn claude() -> Check {
 
 pub fn claude_version_check(path: &Path, version_output: &str) -> Check {
     let Some(v) = parse_version(version_output) else {
-        return Check::warn("claude", format!("unrecognized version {version_output:?}"), "run `claude update`");
+        return Check::warn(
+            "claude",
+            format!("unrecognized version {version_output:?}"),
+            "run `claude update`",
+        );
     };
     let shown = format!("{}.{}.{} at {}", v.0, v.1, v.2, path.display());
     if v < CLAUDE_MIN {
@@ -164,12 +218,21 @@ pub fn claude_user_settings(path: &Path) -> Check {
     let raw = match std::fs::read_to_string(path) {
         Ok(r) => r,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Check::ok(name, "none"),
-        Err(e) => return Check::warn(name, format!("{}: {e}", path.display()), "check file permissions"),
+        Err(e) => {
+            return Check::warn(
+                name,
+                format!("{}: {e}", path.display()),
+                "check file permissions",
+            );
+        }
     };
     match serde_json::from_str::<serde_json::Value>(&raw) {
         Ok(v) if v.get("disableAllHooks").and_then(|b| b.as_bool()) == Some(true) => Check::fail(
             name,
-            format!("{} sets disableAllHooks; tp's policy hooks would not run", path.display()),
+            format!(
+                "{} sets disableAllHooks; tp's policy hooks would not run",
+                path.display()
+            ),
             "remove disableAllHooks from that file",
         ),
         Ok(_) => Check::ok(name, path.display().to_string()),
@@ -182,7 +245,10 @@ pub fn cloudflared_config(path: &Path) -> Check {
     if path.exists() {
         Check::warn(
             "cloudflared",
-            format!("{} exists (another tunnel); tp always passes its own --config", path.display()),
+            format!(
+                "{} exists (another tunnel); tp always passes its own --config",
+                path.display()
+            ),
             "no action needed; listed so tunnels never collide",
         )
     } else {
@@ -192,21 +258,35 @@ pub fn cloudflared_config(path: &Path) -> Check {
 
 pub fn daemon(paths: &FactoryPaths) -> Check {
     let loaded = launchd::is_loaded(launchd::DEFAULT_LABEL).unwrap_or(false);
-    match Client::connect(&paths.socket(), Duration::from_secs(2))
-        .and_then(|mut c| c.call::<tp_proto::DaemonStatus>(tp_proto::method::STATUS, serde_json::Value::Null))
-    {
+    match Client::connect(&paths.socket(), Duration::from_secs(2)).and_then(|mut c| {
+        c.call::<tp_proto::DaemonStatus>(tp_proto::method::STATUS, serde_json::Value::Null)
+    }) {
         Ok(s) => Check::ok(
             "daemon",
-            format!("tpd {} pid {} up {}s{}", s.version, s.pid, s.uptime_ms / 1000, if loaded { " (launchd)" } else { "" }),
+            format!(
+                "tpd {} pid {} up {}s{}",
+                s.version,
+                s.pid,
+                s.uptime_ms / 1000,
+                if loaded { " (launchd)" } else { "" }
+            ),
         ),
-        Err(_) if loaded => Check::fail("daemon", "launchd agent loaded but tpd not answering", "see logs/tpd.log"),
+        Err(_) if loaded => Check::fail(
+            "daemon",
+            "launchd agent loaded but tpd not answering",
+            "see logs/tpd.log",
+        ),
         Err(_) => Check::warn("daemon", "not running", "run `tp daemon install`"),
     }
 }
 
 fn first_line(a: &[u8], b: &[u8]) -> String {
     let s = if a.is_empty() { b } else { a };
-    String::from_utf8_lossy(s).lines().next().unwrap_or_default().to_owned()
+    String::from_utf8_lossy(s)
+        .lines()
+        .next()
+        .unwrap_or_default()
+        .to_owned()
 }
 
 #[cfg(test)]
@@ -218,9 +298,18 @@ mod tests {
         assert_eq!(parse_version("2.1.294 (Claude Code)"), Some((2, 1, 294)));
         assert_eq!(parse_version("garbage"), None);
         let p = Path::new("/bin/claude");
-        assert_eq!(claude_version_check(p, "2.1.200 (Claude Code)").status, Status::Fail);
-        assert_eq!(claude_version_check(p, "2.1.294 (Claude Code)").status, Status::Warn);
-        assert_eq!(claude_version_check(p, "2.2.0 (Claude Code)").status, Status::Ok);
+        assert_eq!(
+            claude_version_check(p, "2.1.200 (Claude Code)").status,
+            Status::Fail
+        );
+        assert_eq!(
+            claude_version_check(p, "2.1.294 (Claude Code)").status,
+            Status::Warn
+        );
+        assert_eq!(
+            claude_version_check(p, "2.2.0 (Claude Code)").status,
+            Status::Ok
+        );
     }
 
     #[test]

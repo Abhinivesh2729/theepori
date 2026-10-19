@@ -159,10 +159,8 @@ fn run(cli: Cli) -> Result<ExitCode> {
                         Status::Fail => "FAIL",
                     };
                     println!("{mark}  {:<22} {}", c.name, c.detail);
-                    if let Some(fix) = &c.fix {
-                        if c.status != Status::Ok {
-                            println!("      {:<22} fix: {fix}", "");
-                        }
+                    if let Some(fix) = c.fix.as_ref().filter(|_| c.status != Status::Ok) {
+                        println!("      {:<22} fix: {fix}", "");
                     }
                 }
             }
@@ -170,7 +168,13 @@ fn run(cli: Cli) -> Result<ExitCode> {
                 return Ok(ExitCode::FAILURE);
             }
         }
-        Cmd::Project(ProjectCmd::Add { path, slug, name, jira, json }) => {
+        Cmd::Project(ProjectCmd::Add {
+            path,
+            slug,
+            name,
+            jira,
+            json,
+        }) => {
             let req = ProjectAdd {
                 repo_path: path.to_string_lossy().into_owned(),
                 slug,
@@ -198,7 +202,12 @@ fn run(cli: Cli) -> Result<ExitCode> {
                 println!("No projects. Add one with `tp project add <path>`.");
             } else {
                 for p in list {
-                    println!("{:<20} {:<6} {}", p.slug, p.jira_key.as_deref().unwrap_or("-"), p.repo_path);
+                    println!(
+                        "{:<20} {:<6} {}",
+                        p.slug,
+                        p.jira_key.as_deref().unwrap_or("-"),
+                        p.repo_path
+                    );
                 }
             }
         }
@@ -234,7 +243,11 @@ fn run(cli: Cli) -> Result<ExitCode> {
             } else if v.ok {
                 println!("Audit chain intact: {} records.", v.records);
             } else {
-                println!("Audit chain BROKEN after record {}: {}", v.records, v.problem.unwrap_or_default());
+                println!(
+                    "Audit chain BROKEN after record {}: {}",
+                    v.records,
+                    v.problem.unwrap_or_default()
+                );
             }
             if !v.ok {
                 return Ok(ExitCode::FAILURE);
@@ -307,7 +320,9 @@ fn daemon_cmd(paths: &FactoryPaths, cmd: DaemonCmd) -> Result<ExitCode> {
         DaemonCmd::Stop => match daemon(paths) {
             Some(mut c) => {
                 c.call_raw(method::SHUTDOWN, Value::Null)?;
-                println!("tpd is stopping. (Under launchd it stays stopped until `tp daemon install`.)");
+                println!(
+                    "tpd is stopping. (Under launchd it stays stopped until `tp daemon install`.)"
+                );
             }
             None => println!("tpd is not running."),
         },
@@ -325,7 +340,13 @@ fn daemon_cmd(paths: &FactoryPaths, cmd: DaemonCmd) -> Result<ExitCode> {
             if json {
                 print_json(&r)?;
             } else {
-                println!("status x{}: p50 {:.3} ms, p95 {:.3} ms, p99 {:.3} ms", samples.len(), pct(0.5), pct(0.95), pct(0.99));
+                println!(
+                    "status x{}: p50 {:.3} ms, p95 {:.3} ms, p99 {:.3} ms",
+                    samples.len(),
+                    pct(0.5),
+                    pct(0.95),
+                    pct(0.99)
+                );
             }
         }
     }
@@ -338,14 +359,19 @@ fn add_direct(paths: &FactoryPaths, req: &ProjectAdd) -> Result<Project> {
     let p = registry::add(&conn, paths, req)?;
     AuditLog::new(paths).append(
         &mut conn,
-        NewEvent::new(ActorKind::Human, actor(), "project.added").project(&p.slug).resource(&p.repo_path),
+        NewEvent::new(ActorKind::Human, actor(), "project.added")
+            .project(&p.slug)
+            .resource(&p.repo_path),
     )?;
     Ok(p)
 }
 
 fn open_db(paths: &FactoryPaths) -> Result<db::Connection> {
     if !paths.db().exists() {
-        bail!("no factory at {}; run `tp setup` first", paths.root().display());
+        bail!(
+            "no factory at {}; run `tp setup` first",
+            paths.root().display()
+        );
     }
     let mut conn = db::open(&paths.db())?;
     if db::version(&conn)? < db::latest_version() {
@@ -365,22 +391,29 @@ fn daemon(paths: &FactoryPaths) -> Option<Client> {
 
 fn find_tpd(explicit: Option<PathBuf>) -> Result<PathBuf> {
     if let Some(p) = explicit {
-        return Ok(p.canonicalize().with_context(|| format!("{}", p.display()))?);
+        return p.canonicalize().with_context(|| format!("{}", p.display()));
     }
-    if let Some(sibling) = std::env::current_exe()?.parent().map(|d| d.join("tpd")) {
-        if sibling.is_file() {
-            return Ok(sibling);
-        }
+    if let Some(sibling) = std::env::current_exe()?
+        .parent()
+        .map(|d| d.join("tpd"))
+        .filter(|p| p.is_file())
+    {
+        return Ok(sibling);
     }
-    doctor::which("tpd").context("tpd not found next to tp or on PATH; build it with `make build` or pass --tpd")
+    doctor::which("tpd")
+        .context("tpd not found next to tp or on PATH; build it with `make build` or pass --tpd")
 }
 
 fn home() -> Result<PathBuf> {
-    std::env::var_os("HOME").map(PathBuf::from).context("HOME is not set")
+    std::env::var_os("HOME")
+        .map(PathBuf::from)
+        .context("HOME is not set")
 }
 
 fn actor() -> String {
-    std::env::var("USER").map(|u| format!("cli:{u}")).unwrap_or_else(|_| "cli".into())
+    std::env::var("USER")
+        .map(|u| format!("cli:{u}"))
+        .unwrap_or_else(|_| "cli".into())
 }
 
 fn print_json<T: serde::Serialize>(v: &T) -> Result<()> {

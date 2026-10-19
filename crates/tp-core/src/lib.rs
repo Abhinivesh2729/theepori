@@ -23,5 +23,6 @@ pub fn now_rfc3339() -> String {
     let fmt = time::macros::format_description!(
         "[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond digits:3]Z"
     );
-    now.format(&fmt).unwrap_or_else(|_| now.unix_timestamp().to_string())
+    now.format(&fmt)
+        .unwrap_or_else(|_| now.unix_timestamp().to_string())
 }

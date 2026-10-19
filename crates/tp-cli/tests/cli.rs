@@ -17,7 +17,11 @@ fn tp(root: &Path, args: &[&str]) -> Output {
 }
 
 fn json(out: &Output) -> Value {
-    assert!(out.status.success() || !out.stdout.is_empty(), "{}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success() || !out.stdout.is_empty(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     serde_json::from_slice(&out.stdout).unwrap()
 }
 
@@ -31,7 +35,11 @@ fn setup_is_idempotent() {
     assert_eq!(second["created"], serde_json::json!([]));
     assert_eq!(second["migrations_applied"], 0);
     let tail = json(&tp(&root, &["audit", "tail", "--json"]));
-    assert_eq!(tail.as_array().unwrap().len(), 1, "only the first setup is audited");
+    assert_eq!(
+        tail.as_array().unwrap().len(),
+        1,
+        "only the first setup is audited"
+    );
     assert_eq!(tail[0]["actor"]["id"], "cli:tester");
 }
 
@@ -47,7 +55,17 @@ fn project_add_without_daemon_is_audited() {
     assert!(String::from_utf8_lossy(&out.stderr).contains("run `tp setup` first"));
 
     tp(&root, &["setup"]);
-    let p = json(&tp(&root, &["project", "add", repo.to_str().unwrap(), "--jira", "sf", "--json"]));
+    let p = json(&tp(
+        &root,
+        &[
+            "project",
+            "add",
+            repo.to_str().unwrap(),
+            "--jira",
+            "sf",
+            "--json",
+        ],
+    ));
     assert_eq!(p["slug"], "repo-one");
     assert_eq!(p["jira_key"], "SF");
     let list = json(&tp(&root, &["project", "list", "--json"]));

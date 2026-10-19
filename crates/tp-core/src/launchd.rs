@@ -16,11 +16,16 @@ pub fn bin_dir(home: &Path) -> PathBuf {
 }
 
 pub fn plist_path(home: &Path, label: &str) -> PathBuf {
-    home.join("Library/LaunchAgents").join(format!("{label}.plist"))
+    home.join("Library/LaunchAgents")
+        .join(format!("{label}.plist"))
 }
 
 pub fn plist(label: &str, tpd: &Path, paths: &FactoryPaths) -> String {
-    let esc = |s: &str| s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;");
+    let esc = |s: &str| {
+        s.replace('&', "&amp;")
+            .replace('<', "&lt;")
+            .replace('>', "&gt;")
+    };
     let tpd = esc(&tpd.display().to_string());
     let root = esc(&paths.root().display().to_string());
     let log = esc(&paths.logs().join("tpd.log").display().to_string());
@@ -49,18 +54,30 @@ pub fn plist(label: &str, tpd: &Path, paths: &FactoryPaths) -> String {
 }
 
 fn domain() -> Result<String> {
-    let out = Command::new("id").arg("-u").output().map_err(|e| Error::Invalid(format!("id -u: {e}")))?;
-    Ok(format!("gui/{}", String::from_utf8_lossy(&out.stdout).trim()))
+    let out = Command::new("id")
+        .arg("-u")
+        .output()
+        .map_err(|e| Error::Invalid(format!("id -u: {e}")))?;
+    Ok(format!(
+        "gui/{}",
+        String::from_utf8_lossy(&out.stdout).trim()
+    ))
 }
 
 fn launchctl(args: &[&str]) -> Result<std::process::Output> {
-    Command::new("launchctl").args(args).output().map_err(|e| Error::Invalid(format!("launchctl: {e}")))
+    Command::new("launchctl")
+        .args(args)
+        .output()
+        .map_err(|e| Error::Invalid(format!("launchctl: {e}")))
 }
 
 /// Copies tpd to [`bin_dir`], writes the plist and (re)loads the agent.
 pub fn install(home: &Path, label: &str, tpd_src: &Path, paths: &FactoryPaths) -> Result<PathBuf> {
     if !tpd_src.is_file() {
-        return Err(Error::Invalid(format!("{} not found; build it with `make build`", tpd_src.display())));
+        return Err(Error::Invalid(format!(
+            "{} not found; build it with `make build`",
+            tpd_src.display()
+        )));
     }
     let dir = bin_dir(home);
     std::fs::create_dir_all(&dir).map_err(|e| Error::io(&dir, e))?;
@@ -97,7 +114,9 @@ pub fn uninstall(home: &Path, label: &str) -> Result<bool> {
 }
 
 pub fn is_loaded(label: &str) -> Result<bool> {
-    Ok(launchctl(&["print", &format!("{}/{label}", domain()?)])?.status.success())
+    Ok(launchctl(&["print", &format!("{}/{label}", domain()?)])?
+        .status
+        .success())
 }
 
 #[cfg(test)]
@@ -106,8 +125,14 @@ mod tests {
 
     #[test]
     fn plist_has_program_and_keepalive() {
-        let p = plist("x.test", Path::new("/opt/tp/tpd"), &FactoryPaths::new("/f a&b"));
-        assert!(p.contains("<string>/opt/tp/tpd</string><string>--factory</string><string>/f a&amp;b</string>"));
+        let p = plist(
+            "x.test",
+            Path::new("/opt/tp/tpd"),
+            &FactoryPaths::new("/f a&b"),
+        );
+        assert!(p.contains(
+            "<string>/opt/tp/tpd</string><string>--factory</string><string>/f a&amp;b</string>"
+        ));
         assert!(p.contains("<key>SuccessfulExit</key><false/>"));
         assert!(p.contains("/f a&amp;b/logs/tpd.log"));
     }

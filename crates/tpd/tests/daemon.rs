@@ -22,7 +22,10 @@ impl Daemon {
             .stderr(Stdio::null())
             .spawn()
             .unwrap();
-        let d = Self { child, root: root.into() };
+        let d = Self {
+            child,
+            root: root.into(),
+        };
         let deadline = Instant::now() + Duration::from_secs(10);
         while d.client_opt().is_none() {
             assert!(Instant::now() < deadline, "tpd did not come up");
@@ -39,7 +42,9 @@ impl Daemon {
         self.client_opt().unwrap()
     }
     fn stop(mut self) -> std::process::ExitStatus {
-        self.client().call_raw(method::SHUTDOWN, Value::Null).unwrap();
+        self.client()
+            .call_raw(method::SHUTDOWN, Value::Null)
+            .unwrap();
         let deadline = Instant::now() + Duration::from_secs(10);
         loop {
             if let Some(s) = self.child.try_wait().unwrap() {
@@ -60,7 +65,10 @@ impl Drop for Daemon {
 
 fn scratch() -> (tempfile::TempDir, PathBuf) {
     // Short path: macOS limits Unix socket paths to 104 bytes.
-    let dir = tempfile::Builder::new().prefix("tpd").tempdir_in("/tmp").unwrap();
+    let dir = tempfile::Builder::new()
+        .prefix("tpd")
+        .tempdir_in("/tmp")
+        .unwrap();
     let root = dir.path().join("f");
     (dir, root)
 }
@@ -83,10 +91,16 @@ fn status_projects_audit_and_shutdown() {
 
     let repo = git_repo(dir.path(), "demo");
     let p: Project = c
-        .call(method::PROJECT_ADD, json!({"repo_path": repo, "jira_key": "SF"}))
+        .call(
+            method::PROJECT_ADD,
+            json!({"repo_path": repo, "jira_key": "SF"}),
+        )
         .unwrap();
     assert_eq!(p.slug, "demo");
-    let err = c.call_raw(method::PROJECT_ADD, json!({"repo_path": repo})).unwrap_err().to_string();
+    let err = c
+        .call_raw(method::PROJECT_ADD, json!({"repo_path": repo}))
+        .unwrap_err()
+        .to_string();
     assert!(err.contains("Conflict"), "{err}");
     let list: Vec<Project> = c.call(method::PROJECT_LIST, Value::Null).unwrap();
     assert_eq!(list, vec![p]);
@@ -96,7 +110,10 @@ fn status_projects_audit_and_shutdown() {
 
     let tail: Vec<AuditRecord> = c.call(method::AUDIT_TAIL, json!({"limit": 10})).unwrap();
     let actions: Vec<_> = tail.iter().map(|r| r.action.as_str()).collect();
-    assert_eq!(actions, ["factory.setup", "daemon.started", "project.added"]);
+    assert_eq!(
+        actions,
+        ["factory.setup", "daemon.started", "project.added"]
+    );
 
     assert!(d.stop().success());
     assert!(!root.join("tpd.sock").exists(), "socket removed on exit");
@@ -105,9 +122,15 @@ fn status_projects_audit_and_shutdown() {
     let d = Daemon::start(&root);
     let v: AuditVerify = d.client().call(method::AUDIT_VERIFY, Value::Null).unwrap();
     assert!(v.ok, "{v:?}");
-    let tail: Vec<AuditRecord> = d.client().call(method::AUDIT_TAIL, json!({"limit": 3})).unwrap();
+    let tail: Vec<AuditRecord> = d
+        .client()
+        .call(method::AUDIT_TAIL, json!({"limit": 3}))
+        .unwrap();
     let actions: Vec<_> = tail.iter().map(|r| r.action.as_str()).collect();
-    assert_eq!(actions, ["daemon.stop_requested", "daemon.stopped", "daemon.started"]);
+    assert_eq!(
+        actions,
+        ["daemon.stop_requested", "daemon.stopped", "daemon.started"]
+    );
     d.stop();
 }
 
@@ -135,7 +158,10 @@ fn subscribers_receive_audit_events() {
     let mut events = sub.subscribe().unwrap();
 
     let repo = git_repo(dir.path(), "evt");
-    let _: Project = d.client().call(method::PROJECT_ADD, json!({"repo_path": repo})).unwrap();
+    let _: Project = d
+        .client()
+        .call(method::PROJECT_ADD, json!({"repo_path": repo}))
+        .unwrap();
 
     let first = events.next().unwrap().unwrap();
     assert_eq!(first.event, "audit.appended");

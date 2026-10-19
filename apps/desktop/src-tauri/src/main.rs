@@ -21,8 +21,12 @@ fn connect(sock: &PathBuf) -> Result<Client, String> {
     Client::connect(sock, Duration::from_secs(5)).map_err(|e| e.to_string())
 }
 
-async fn on_worker<T: Send + 'static>(f: impl FnOnce() -> Result<T, String> + Send + 'static) -> Result<T, String> {
-    tauri::async_runtime::spawn_blocking(f).await.map_err(|e| e.to_string())?
+async fn on_worker<T: Send + 'static>(
+    f: impl FnOnce() -> Result<T, String> + Send + 'static,
+) -> Result<T, String> {
+    tauri::async_runtime::spawn_blocking(f)
+        .await
+        .map_err(|e| e.to_string())?
 }
 
 /// `None` when tpd is not running (not an error for the UI).
@@ -31,7 +35,10 @@ async fn daemon_status(sock: State<'_, Socket>) -> Result<Option<DaemonStatus>, 
     let sock = sock.0.clone();
     on_worker(move || match connect(&sock) {
         Err(_) => Ok(None),
-        Ok(mut c) => c.call(method::STATUS, Value::Null).map(Some).map_err(|e| e.to_string()),
+        Ok(mut c) => c
+            .call(method::STATUS, Value::Null)
+            .map(Some)
+            .map_err(|e| e.to_string()),
     })
     .await
 }
@@ -39,7 +46,12 @@ async fn daemon_status(sock: State<'_, Socket>) -> Result<Option<DaemonStatus>, 
 #[tauri::command]
 async fn project_list(sock: State<'_, Socket>) -> Result<Vec<Project>, String> {
     let sock = sock.0.clone();
-    on_worker(move || connect(&sock)?.call(method::PROJECT_LIST, Value::Null).map_err(|e| e.to_string())).await
+    on_worker(move || {
+        connect(&sock)?
+            .call(method::PROJECT_LIST, Value::Null)
+            .map_err(|e| e.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
@@ -57,7 +69,9 @@ async fn audit_tail(sock: State<'_, Socket>, limit: u32) -> Result<Vec<AuditReco
 /// time to usable shell for the perf harness; with `TP_PERF_EXIT=1`, quits.
 #[tauri::command]
 fn app_ready(app: AppHandle) {
-    let ms = STARTED.get().map_or(0.0, |t| t.elapsed().as_secs_f64() * 1000.0);
+    let ms = STARTED
+        .get()
+        .map_or(0.0, |t| t.elapsed().as_secs_f64() * 1000.0);
     if let Ok(out) = std::env::var("TP_PERF_OUT") {
         let _ = std::fs::write(out, format!("{{\"ready_ms\":{ms:.1}}}\n"));
     }
@@ -110,7 +124,12 @@ fn main() {
     let sock = paths.socket();
     tauri::Builder::default()
         .manage(Socket(sock.clone()))
-        .invoke_handler(tauri::generate_handler![daemon_status, project_list, audit_tail, app_ready])
+        .invoke_handler(tauri::generate_handler![
+            daemon_status,
+            project_list,
+            audit_tail,
+            app_ready
+        ])
         .setup(move |app| {
             bridge_events(app.handle().clone(), sock.clone());
             Ok(())

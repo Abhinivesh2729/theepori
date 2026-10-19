@@ -23,7 +23,9 @@ impl FactoryPaths {
         }
         let home = std::env::var_os("HOME")
             .filter(|v| !v.is_empty())
-            .ok_or_else(|| Error::Invalid("HOME is not set; set TP_FACTORY to the factory directory".into()))?;
+            .ok_or_else(|| {
+                Error::Invalid("HOME is not set; set TP_FACTORY to the factory directory".into())
+            })?;
         Ok(Self::new(Path::new(&home).join("factory")))
     }
 
@@ -86,7 +88,10 @@ mod tests {
     fn layout_is_under_root() {
         let p = FactoryPaths::new("/x/factory");
         assert_eq!(p.config(), PathBuf::from("/x/factory/factory.yaml"));
-        assert_eq!(p.project_dir("app"), PathBuf::from("/x/factory/projects/app"));
+        assert_eq!(
+            p.project_dir("app"),
+            PathBuf::from("/x/factory/projects/app")
+        );
         assert!(p.dirs().iter().all(|d| d.starts_with("/x/factory")));
     }
 }

@@ -24,7 +24,9 @@ fn main() -> ExitCode {
                 return ExitCode::SUCCESS;
             }
             "--help" | "-h" => {
-                println!("usage: tpd [--factory <dir>]\n\nRuns the factory daemon in the foreground. Install it as a launchd agent with `tp daemon install`.");
+                println!(
+                    "usage: tpd [--factory <dir>]\n\nRuns the factory daemon in the foreground. Install it as a launchd agent with `tp daemon install`."
+                );
                 return ExitCode::SUCCESS;
             }
             other => {
@@ -33,9 +35,15 @@ fn main() -> ExitCode {
             }
         }
     }
-    tracing_subscriber::fmt().with_target(false).with_writer(std::io::stderr).init();
+    tracing_subscriber::fmt()
+        .with_target(false)
+        .with_writer(std::io::stderr)
+        .init();
 
-    let paths = match factory.map(FactoryPaths::new).map_or_else(FactoryPaths::resolve, Ok) {
+    let paths = match factory
+        .map(FactoryPaths::new)
+        .map_or_else(FactoryPaths::resolve, Ok)
+    {
         Ok(p) => p,
         Err(e) => {
             eprintln!("tpd: {e}");
@@ -43,7 +51,10 @@ fn main() -> ExitCode {
         }
     };
     if let Err(e) = tp_core::setup::setup(&paths, "tpd") {
-        eprintln!("tpd: factory at {} is not usable: {e}", paths.root().display());
+        eprintln!(
+            "tpd: factory at {} is not usable: {e}",
+            paths.root().display()
+        );
         return ExitCode::from(EXIT_CONFIG);
     }
     let lock = match server::acquire_lock(&paths) {
@@ -54,7 +65,10 @@ fn main() -> ExitCode {
         }
     };
 
-    let rt = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
+    let rt = match tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+    {
         Ok(rt) => rt,
         Err(e) => {
             eprintln!("tpd: cannot start runtime: {e}");

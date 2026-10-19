@@ -13,8 +13,8 @@ use tp_core::audit::{AuditLog, NewEvent};
 use tp_core::paths::FactoryPaths;
 use tp_core::{Error, db, registry};
 use tp_proto::{
-    ActorKind, AuditTail, DaemonStatus, ErrorCode, Event, PROTOCOL_VERSION, ProjectAdd, Request, Response,
-    event, method,
+    ActorKind, AuditTail, DaemonStatus, ErrorCode, Event, PROTOCOL_VERSION, ProjectAdd, Request,
+    Response, event, method,
 };
 
 /// Requests larger than this are rejected (and the connection closed).
@@ -38,7 +38,9 @@ pub fn acquire_lock(paths: &FactoryPaths) -> anyhow::Result<Lock> {
             paths.root().display(),
             path.display()
         ),
-        Err(std::fs::TryLockError::Error(e)) => Err(e).with_context(|| format!("lock {}", path.display())),
+        Err(std::fs::TryLockError::Error(e)) => {
+            Err(e).with_context(|| format!("lock {}", path.display()))
+        }
     }
 }
 
@@ -56,15 +58,27 @@ impl State {
     /// Records an audit event and pushes it to subscribers. Blocking.
     fn record(&self, ev: NewEvent) -> tp_core::Result<tp_proto::AuditRecord> {
         let rec = {
-            let mut conn = self.conn.lock().map_err(|_| Error::Daemon("state lock poisoned".into()))?;
+            let mut conn = self
+                .conn
+                .lock()
+                .map_err(|_| Error::Daemon("state lock poisoned".into()))?;
             self.audit.append(&mut conn, ev)?
         };
-        let _ = self.events.send(Event { event: event::AUDIT_APPENDED.into(), data: json!(rec) });
+        let _ = self.events.send(Event {
+            event: event::AUDIT_APPENDED.into(),
+            data: json!(rec),
+        });
         Ok(rec)
     }
 
-    fn with_conn<T>(&self, f: impl FnOnce(&Connection) -> tp_core::Result<T>) -> tp_core::Result<T> {
-        let conn = self.conn.lock().map_err(|_| Error::Daemon("state lock poisoned".into()))?;
+    fn with_conn<T>(
+        &self,
+        f: impl FnOnce(&Connection) -> tp_core::Result<T>,
+    ) -> tp_core::Result<T> {
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|_| Error::Daemon("state lock poisoned".into()))?;
         f(&conn)
     }
 }
@@ -90,7 +104,10 @@ pub async fn run(paths: FactoryPaths) -> anyhow::Result<()> {
 
     let pid = std::process::id();
     blocking(&state, move |s| {
-        s.record(NewEvent::system("daemon.started").details(json!({"pid": pid, "version": tp_core::VERSION})))
+        s.record(
+            NewEvent::system("daemon.started")
+                .details(json!({"pid": pid, "version": tp_core::VERSION})),
+        )
     })
     .await?;
     tracing::info!(socket = %sock.display(), pid, "tpd ready");
@@ -116,8 +133,10 @@ pub async fn run(paths: FactoryPaths) -> anyhow::Result<()> {
     };
     tracing::info!(reason, "tpd stopping");
     let _ = std::fs::remove_file(&sock);
-    blocking(&state, move |s| s.record(NewEvent::system("daemon.stopped").details(json!({"reason": reason}))))
-        .await?;
+    blocking(&state, move |s| {
+        s.record(NewEvent::system("daemon.stopped").details(json!({"reason": reason})))
+    })
+    .await?;
     Ok(())
 }
 
@@ -139,18 +158,29 @@ async fn serve(state: Arc<State>, stream: UnixStream) -> anyhow::Result<()> {
     let mut line = String::new();
     loop {
         line.clear();
-        let n = (&mut reader).take(MAX_LINE as u64 + 1).read_line(&mut line).await?;
+        let n = (&mut reader)
+            .take(MAX_LINE as u64 + 1)
+            .read_line(&mut line)
+            .await?;
         if n == 0 {
             return Ok(());
         }
         if n > MAX_LINE {
-            write(&mut w, &Response::err(0, ErrorCode::BadRequest, "request too large")).await?;
+            write(
+                &mut w,
+                &Response::err(0, ErrorCode::BadRequest, "request too large"),
+            )
+            .await?;
             return Ok(());
         }
         let req: Request = match serde_json::from_str(line.trim_end()) {
             Ok(r) => r,
             Err(e) => {
-                write(&mut w, &Response::err(0, ErrorCode::BadRequest, format!("invalid request: {e}"))).await?;
+                write(
+                    &mut w,
+                    &Response::err(0, ErrorCode::BadRequest, format!("invalid request: {e}")),
+                )
+                .await?;
                 continue;
             }
         };
@@ -185,7 +215,10 @@ async fn stream_events(
     }
 }
 
-async fn write<T: serde::Serialize>(w: &mut tokio::net::unix::OwnedWriteHalf, msg: &T) -> anyhow::Result<()> {
+async fn write<T: serde::Serialize>(
+    w: &mut tokio::net::unix::OwnedWriteHalf,
+    msg: &T,
+) -> anyhow::Result<()> {
     let mut buf = serde_json::to_vec(msg)?;
     buf.push(b'\n');
     w.write_all(&buf).await?;
@@ -196,20 +229,23 @@ async fn dispatch(state: &Arc<State>, actor: &str, req: Request) -> Response {
     let id = req.id;
     let actor = actor.to_owned();
     let result: tp_core::Result<Value> = match req.method.as_str() {
-        method::STATUS => blocking(state, |s| {
-            let (projects, audit_events) = s.with_conn(|c| Ok((registry::count(c)?, s.audit.count(c)?)))?;
-            Ok(json!(DaemonStatus {
-                protocol: PROTOCOL_VERSION,
-                version: tp_core::VERSION.into(),
-                pid: std::process::id(),
-                started_at: s.started_at.clone(),
-                uptime_ms: s.started.elapsed().as_millis() as u64,
-                factory_root: s.paths.root().display().to_string(),
-                projects,
-                audit_events,
-            }))
-        })
-        .await,
+        method::STATUS => {
+            blocking(state, |s| {
+                let (projects, audit_events) =
+                    s.with_conn(|c| Ok((registry::count(c)?, s.audit.count(c)?)))?;
+                Ok(json!(DaemonStatus {
+                    protocol: PROTOCOL_VERSION,
+                    version: tp_core::VERSION.into(),
+                    pid: std::process::id(),
+                    started_at: s.started_at.clone(),
+                    uptime_ms: s.started.elapsed().as_millis() as u64,
+                    factory_root: s.paths.root().display().to_string(),
+                    projects,
+                    audit_events,
+                }))
+            })
+            .await
+        }
         method::PROJECT_LIST => blocking(state, |s| Ok(json!(s.with_conn(registry::list)?))).await,
         method::PROJECT_ADD => match serde_json::from_value::<ProjectAdd>(req.params) {
             Ok(p) => {
@@ -220,7 +256,10 @@ async fn dispatch(state: &Arc<State>, actor: &str, req: Request) -> Response {
                             .project(&project.slug)
                             .resource(&project.repo_path),
                     )?;
-                    let _ = s.events.send(Event { event: event::PROJECT_ADDED.into(), data: json!(project) });
+                    let _ = s.events.send(Event {
+                        event: event::PROJECT_ADDED.into(),
+                        data: json!(project),
+                    });
                     Ok(json!(project))
                 })
                 .await
@@ -228,25 +267,45 @@ async fn dispatch(state: &Arc<State>, actor: &str, req: Request) -> Response {
             Err(e) => Err(Error::Invalid(format!("project.add params: {e}"))),
         },
         method::AUDIT_TAIL => {
-            let params = if req.params.is_null() { json!({}) } else { req.params };
+            let params = if req.params.is_null() {
+                json!({})
+            } else {
+                req.params
+            };
             match serde_json::from_value::<AuditTail>(params) {
-                Ok(t) => blocking(state, move |s| Ok(json!(s.with_conn(|c| s.audit.tail(c, t.limit.min(1000)))?)))
-                    .await,
+                Ok(t) => {
+                    blocking(state, move |s| {
+                        Ok(json!(s.with_conn(|c| s.audit.tail(c, t.limit.min(1000)))?))
+                    })
+                    .await
+                }
                 Err(e) => Err(Error::Invalid(format!("audit.tail params: {e}"))),
             }
         }
-        method::AUDIT_VERIFY => blocking(state, |s| Ok(json!(s.with_conn(|c| s.audit.verify(c))?))).await,
+        method::AUDIT_VERIFY => {
+            blocking(state, |s| Ok(json!(s.with_conn(|c| s.audit.verify(c))?))).await
+        }
         method::SHUTDOWN => {
             let st = state.clone();
             let r = blocking(state, move |s| {
-                s.record(NewEvent::new(ActorKind::Human, actor, "daemon.stop_requested"))?;
+                s.record(NewEvent::new(
+                    ActorKind::Human,
+                    actor,
+                    "daemon.stop_requested",
+                ))?;
                 Ok(json!({"stopping": true}))
             })
             .await;
             st.shutdown.notify_one();
             r
         }
-        other => return Response::err(id, ErrorCode::UnknownMethod, format!("unknown method {other:?}")),
+        other => {
+            return Response::err(
+                id,
+                ErrorCode::UnknownMethod,
+                format!("unknown method {other:?}"),
+            );
+        }
     };
     match result {
         Ok(v) => Response::ok(id, v),

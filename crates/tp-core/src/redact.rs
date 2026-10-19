@@ -46,7 +46,8 @@ impl Redactor {
         I: IntoIterator<Item = S>,
         S: Into<String>,
     {
-        self.values.extend(values.into_iter().map(Into::into).filter(|v| v.len() >= 8));
+        self.values
+            .extend(values.into_iter().map(Into::into).filter(|v| v.len() >= 8));
         self.values.sort_by_key(|v| std::cmp::Reverse(v.len()));
     }
 
@@ -61,7 +62,11 @@ impl Redactor {
         let pats = patterns();
         let last = pats.len() - 1;
         for (i, re) in pats.iter().enumerate() {
-            let rep = if i == last { "${1}${2}[REDACTED]" } else { MARK };
+            let rep = if i == last {
+                "${1}${2}[REDACTED]"
+            } else {
+                MARK
+            };
             out = re.replace_all(&out, rep).into_owned();
         }
         out
@@ -77,9 +82,11 @@ impl Redactor {
         match v {
             Value::String(s) => Value::String(self.redact(s)),
             Value::Array(a) => Value::Array(a.iter().map(|x| self.redact_json(x)).collect()),
-            Value::Object(o) => {
-                Value::Object(o.iter().map(|(k, x)| (k.clone(), self.redact_json(x))).collect())
-            }
+            Value::Object(o) => Value::Object(
+                o.iter()
+                    .map(|(k, x)| (k.clone(), self.redact_json(x)))
+                    .collect(),
+            ),
             other => other.clone(),
         }
     }
@@ -119,16 +126,25 @@ mod tests {
     fn keeps_key_name_for_assignments() {
         let r = Redactor::new();
         assert_eq!(r.redact("API_KEY=abcdefghijklmnop"), "API_KEY=[REDACTED]");
-        assert_eq!(r.redact(r#""password": "hunter2hunter2""#), r#""password": "[REDACTED]""#);
+        assert_eq!(
+            r.redact(r#""password": "hunter2hunter2""#),
+            r#""password": "[REDACTED]""#
+        );
     }
 
     #[test]
     fn literal_values_and_json() {
         let mut r = Redactor::new();
         r.add(["short", "my-literal-secret-value"]);
-        assert_eq!(r.redact("x my-literal-secret-value y short"), "x [REDACTED] y short");
+        assert_eq!(
+            r.redact("x my-literal-secret-value y short"),
+            "x [REDACTED] y short"
+        );
         let v = serde_json::json!({"a": ["my-literal-secret-value"], "n": 3});
-        assert_eq!(r.redact_json(&v), serde_json::json!({"a": ["[REDACTED]"], "n": 3}));
+        assert_eq!(
+            r.redact_json(&v),
+            serde_json::json!({"a": ["[REDACTED]"], "n": 3})
+        );
     }
 
     #[test]

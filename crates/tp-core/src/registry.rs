@@ -11,7 +11,10 @@ use crate::{Error, Result};
 /// Validates and normalizes a registration request, without touching state.
 pub fn prepare(req: &ProjectAdd) -> Result<Project> {
     let repo = canonical_repo(Path::new(&req.repo_path))?;
-    let dir_name = repo.file_name().and_then(|n| n.to_str()).unwrap_or("project");
+    let dir_name = repo
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("project");
     let slug = match &req.slug {
         Some(s) => s.clone(),
         None => slugify(dir_name),
@@ -21,7 +24,11 @@ pub fn prepare(req: &ProjectAdd) -> Result<Project> {
     if let Some(k) = &jira_key {
         validate_jira_key(k)?;
     }
-    let name = req.name.clone().filter(|n| !n.trim().is_empty()).unwrap_or_else(|| dir_name.to_owned());
+    let name = req
+        .name
+        .clone()
+        .filter(|n| !n.trim().is_empty())
+        .unwrap_or_else(|| dir_name.to_owned());
     Ok(Project {
         slug,
         name,
@@ -96,7 +103,10 @@ fn row_to_project(r: &rusqlite::Row<'_>) -> rusqlite::Result<Project> {
 
 fn canonical_repo(path: &Path) -> Result<PathBuf> {
     let repo = path.canonicalize().map_err(|e| {
-        Error::Invalid(format!("{}: {e}; pass the path to a local git checkout", path.display()))
+        Error::Invalid(format!(
+            "{}: {e}; pass the path to a local git checkout",
+            path.display()
+        ))
     })?;
     if !repo.join(".git").exists() {
         return Err(Error::Invalid(format!(
@@ -122,7 +132,8 @@ pub fn slugify(s: &str) -> String {
 pub fn validate_slug(s: &str) -> Result<()> {
     let ok = !s.is_empty()
         && s.len() <= 40
-        && s.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+        && s.chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
         && !s.starts_with('-')
         && !s.ends_with('-');
     if ok {
@@ -143,7 +154,9 @@ fn validate_jira_key(k: &str) -> Result<()> {
     if ok {
         Ok(())
     } else {
-        Err(Error::Invalid(format!("Jira key {k:?} must look like SF or PAN2 (2-10 chars, letter first)")))
+        Err(Error::Invalid(format!(
+            "Jira key {k:?} must look like SF or PAN2 (2-10 chars, letter first)"
+        )))
     }
 }
 
@@ -164,7 +177,12 @@ mod tests {
     }
 
     fn req(repo: &Path) -> ProjectAdd {
-        ProjectAdd { repo_path: repo.to_string_lossy().into(), slug: None, name: None, jira_key: Some("sf".into()) }
+        ProjectAdd {
+            repo_path: repo.to_string_lossy().into(),
+            slug: None,
+            name: None,
+            jira_key: Some("sf".into()),
+        }
     }
 
     #[test]
@@ -184,7 +202,10 @@ mod tests {
     fn rejects_duplicates() {
         let (_d, paths, conn, repo) = fixture();
         add(&conn, &paths, &req(&repo)).unwrap();
-        assert!(matches!(add(&conn, &paths, &req(&repo)), Err(Error::Conflict(_))));
+        assert!(matches!(
+            add(&conn, &paths, &req(&repo)),
+            Err(Error::Conflict(_))
+        ));
         let mut other = req(&repo);
         other.slug = Some("other".into());
         let err = add(&conn, &paths, &other).unwrap_err().to_string();
@@ -196,7 +217,12 @@ mod tests {
         let (d, paths, conn, repo) = fixture();
         let plain = d.path().join("plain");
         std::fs::create_dir_all(&plain).unwrap();
-        assert!(add(&conn, &paths, &req(&plain)).unwrap_err().to_string().contains("not a git repository"));
+        assert!(
+            add(&conn, &paths, &req(&plain))
+                .unwrap_err()
+                .to_string()
+                .contains("not a git repository")
+        );
         let mut bad = req(&repo);
         bad.slug = Some("Bad Slug".into());
         assert!(add(&conn, &paths, &bad).is_err());

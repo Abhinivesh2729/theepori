@@ -46,10 +46,21 @@ pub struct Response {
 
 impl Response {
     pub fn ok(id: u64, result: Value) -> Self {
-        Self { id, result: Some(result), error: None }
+        Self {
+            id,
+            result: Some(result),
+            error: None,
+        }
     }
     pub fn err(id: u64, code: ErrorCode, message: impl Into<String>) -> Self {
-        Self { id, result: None, error: Some(RpcError { code, message: message.into() }) }
+        Self {
+            id,
+            result: None,
+            error: Some(RpcError {
+                code,
+                message: message.into(),
+            }),
+        }
     }
 }
 
@@ -194,7 +205,11 @@ mod tests {
 
     #[test]
     fn request_round_trip_omits_null_params() {
-        let r = Request { id: 7, method: method::STATUS.into(), params: Value::Null };
+        let r = Request {
+            id: 7,
+            method: method::STATUS.into(),
+            params: Value::Null,
+        };
         let s = serde_json::to_string(&r).unwrap();
         assert_eq!(s, r#"{"id":7,"method":"status"}"#);
         assert_eq!(serde_json::from_str::<Request>(&s).unwrap(), r);
