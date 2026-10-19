@@ -34,7 +34,7 @@ export default function PlanView() {
   return (
     <div className="page">
       <PageHeader
-        title="Daily Plan"
+        title="Daily plan"
         sub="Signals collect all day; one plan is drafted and one approval authorizes its items. Critical incidents skip the plan."
         actions={
           <button className="btn primary" onClick={() => void generate()} disabled={gen.busy}>

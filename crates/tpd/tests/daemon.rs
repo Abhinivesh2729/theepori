@@ -129,9 +129,15 @@ fn status_projects_audit_and_shutdown() {
     assert!(v.ok, "{v:?}");
     let tail: Vec<AuditRecord> = d
         .client()
-        .call(method::AUDIT_TAIL, json!({"limit": 3}))
+        .call(method::AUDIT_TAIL, json!({"limit": 10}))
         .unwrap();
-    let actions: Vec<_> = tail.iter().map(|r| r.action.as_str()).collect();
+    // The restarted scheduler may already have audited intake or a plan.
+    let actions: Vec<_> = tail
+        .iter()
+        .map(|r| r.action.as_str())
+        .filter(|a| !a.starts_with("plan.") && !a.starts_with("intake."))
+        .skip_while(|a| *a != "daemon.stop_requested")
+        .collect();
     assert_eq!(
         actions,
         ["daemon.stop_requested", "daemon.stopped", "daemon.started"]

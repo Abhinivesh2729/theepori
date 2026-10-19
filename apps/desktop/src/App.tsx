@@ -10,11 +10,13 @@ import {
   type ComponentType,
   type ReactNode,
 } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { inTauri, invoke } from "./transport";
 import { api, daemonStatus, useTpdConnection, useTpdEvents } from "./api";
-import type { Link, Project } from "./types";
+import { Icon, Logo } from "./icons";
+import type { Link, Project, TaskSummary } from "./types";
 import {
   AppContext,
+  href,
   navigate,
   useHashRoute,
   VIEWS,
@@ -23,7 +25,7 @@ import {
   type Route,
   type ViewName,
 } from "./router";
-import { fmtUptime, Loading } from "./ui";
+import { fmtUptime, isActiveState, Loading, taskTone, toast, Toaster } from "./ui";
 
 // Views are code-split so the first commit only needs the shell.
 const VIEW_COMPONENTS: Record<ViewName, ComponentType<{ route: Route }>> = {
@@ -42,7 +44,9 @@ const loadPalette = () => import("./Palette");
 const Palette = lazy(loadPalette);
 
 const PROJECT_KEY = "tp.project";
+const SIDEBAR_KEY = "tp.sidebar";
 const ALERT_LIMIT = 50;
+const RECENT_LIMIT = 12;
 const STATUS_EVENTS = [
   "task.updated",
   "run.updated",
@@ -56,23 +60,35 @@ const STATUS_EVENTS = [
 // (requestAnimationFrame never fires for an occluded window).
 let readyReported = false;
 
-function readScope(): string {
+function readStore(key: string): string {
   try {
-    return localStorage.getItem(PROJECT_KEY) ?? "";
+    return localStorage.getItem(key) ?? "";
   } catch {
     return "";
   }
 }
+function writeStore(key: string, v: string) {
+  try {
+    localStorage.setItem(key, v);
+  } catch {
+    /* storage unavailable: lasts for this session */
+  }
+}
+
+/** Views that manage their own full-height layout. */
+const isFlush = (r: Route) => (r.view === "tasks" && !!r.id) || r.view === "chat";
 
 export default function App() {
   const route = useHashRoute();
   const [starting, setStarting] = useState(false);
   const [link, setLink] = useState<Link>({ state: "connecting" });
   const [projects, setProjects] = useState<Project[]>([]);
-  const [project, setProjectState] = useState(readScope);
+  const [project, setProjectState] = useState(() => readStore(PROJECT_KEY));
   const [alerts, setAlerts] = useState<AlertEntry[]>([]);
+  const [recent, setRecent] = useState<TaskSummary[]>([]);
   const [palette, setPalette] = useState<null | "search" | "project">(null);
   const [help, setHelp] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => readStore(SIDEBAR_KEY) === "collapsed");
   const busy = useRef(false);
   const alertSeq = useRef(0);
 
@@ -93,9 +109,13 @@ export default function App() {
     }
   }, []);
 
-  const loadProjects = useCallback(() => {
+  const loadLists = useCallback(() => {
     api.projectList().then(
       (p) => setProjects([...p].sort((a, b) => a.slug.localeCompare(b.slug))),
+      () => undefined,
+    );
+    api.taskList({ limit: 50 }).then(
+      (t) => setRecent([...t].sort((a, b) => b.updated_at.localeCompare(a.updated_at)).slice(0, RECENT_LIMIT)),
       () => undefined,
     );
   }, []);
@@ -106,7 +126,7 @@ export default function App() {
       void invoke("app_ready").catch(() => undefined);
     }
     void refresh();
-    loadProjects();
+    loadLists();
     // Warm the ⌘K palette chunk once the shell is idle.
     const idle = window.setTimeout(() => void loadPalette().catch(() => undefined), 1500);
     // Status/uptime only; live data arrives as events.
@@ -115,12 +135,12 @@ export default function App() {
       window.clearInterval(timer);
       window.clearTimeout(idle);
     };
-  }, [refresh, loadProjects]);
+  }, [refresh, loadLists]);
 
   useTpdConnection((online, reason) => {
     if (online) {
       void refresh();
-      loadProjects();
+      loadLists();
     } else {
       setLink({ state: "offline", reason: reason ?? "tpd disconnected" });
     }
@@ -135,6 +155,10 @@ export default function App() {
       setProjects((prev) =>
         prev.some((x) => x.slug === p.slug) ? prev : [...prev, p].sort((a, b) => a.slug.localeCompare(b.slug)),
       );
+    }
+    if (ev.event === "task.updated") {
+      const t = ev.data;
+      setRecent((prev) => [t, ...prev.filter((x) => x.id !== t.id)].slice(0, RECENT_LIMIT));
     }
     window.clearTimeout(statusTimer.current);
     statusTimer.current = window.setTimeout(() => void refresh(), 400);
@@ -151,21 +175,43 @@ export default function App() {
 
   const setProject = useCallback((slug: string) => {
     setProjectState(slug);
-    try {
-      localStorage.setItem(PROJECT_KEY, slug);
-    } catch {
-      /* storage unavailable: scope lasts for this session */
-    }
+    writeStore(PROJECT_KEY, slug);
+  }, []);
+
+  const toggleSidebar = useCallback(() => {
+    setCollapsed((c) => {
+      writeStore(SIDEBAR_KEY, c ? "open" : "collapsed");
+      return !c;
+    });
+  }, []);
+
+  const newTask = useCallback(() => {
+    navigate({ view: "overview" });
+    // Home focuses its composer on this event (also after navigation).
+    window.setTimeout(() => window.dispatchEvent(new Event("tp:new-task")), 30);
   }, []);
 
   useShortcuts({
     openPalette: (mode) => setPalette(mode),
     toggleHelp: () => setHelp((h) => !h),
+    toggleSidebar,
+    newTask,
     closeAll: () => {
       setPalette(null);
       setHelp(false);
     },
   });
+
+  const startFactory = () => {
+    setStarting(true);
+    invoke<string>("install_daemon")
+      .then(() => {
+        toast("Factory started.");
+        return refresh();
+      })
+      .catch((e) => toast(`Could not start tpd: ${String(e)}`, "bad"))
+      .finally(() => setStarting(false));
+  };
 
   const ctx: AppCtx = useMemo(
     () => ({ link, project, setProject, projects, refreshStatus: () => void refresh(), alerts }),
@@ -175,121 +221,182 @@ export default function App() {
   const status = link.state === "online" ? link.status : null;
   const View = VIEW_COMPONENTS[route.view];
   const current = VIEWS.find((v) => v.name === route.view);
+  const navItem = (v: (typeof VIEWS)[number]) => {
+    const on = route.view === v.name;
+    return (
+      <li key={v.name}>
+        <a
+          href={`#/${v.name}`}
+          className={on ? "nav active" : "nav"}
+          aria-current={on ? "page" : undefined}
+          title={`${v.label} (g ${v.key})`}
+        >
+          <Icon name={v.icon} />
+          <span className="nav-text">{v.label}</span>
+          {v.name === "approvals" && status && status.pending_approvals > 0 && (
+            <span className="nav-count" aria-label={`${status.pending_approvals} pending`}>
+              {status.pending_approvals}
+            </span>
+          )}
+          {v.name === "tasks" && status && status.active_runs > 0 && (
+            <span className="nav-count info" aria-label={`${status.active_runs} active runs`}>
+              {status.active_runs}
+            </span>
+          )}
+        </a>
+      </li>
+    );
+  };
 
   return (
     <AppContext.Provider value={ctx}>
-      <div className="app">
+      <div className={`app ${collapsed ? "collapsed" : ""} ${inTauri ? "native" : ""}`}>
         <a className="skip" href="#main">
           Skip to content
         </a>
         <nav className="sidebar" aria-label="Primary">
+          <div className="side-top" data-tauri-drag-region style={inTauri ? undefined : { paddingLeft: 10 }}>
+            <button className="icon-btn" onClick={toggleSidebar} title="Hide sidebar (⌘\)" aria-label="Hide sidebar">
+              <Icon name="sidebar" />
+            </button>
+          </div>
           <div className="brand">
             <span className="logo" aria-hidden>
-              ◆
+              <Logo />
             </span>
             Thee Pori
           </div>
-          <ul>
-            {VIEWS.map((v) => (
-              <li key={v.name}>
-                <a
-                  href={`#/${v.name}`}
-                  className={route.view === v.name ? "nav active" : "nav"}
-                  aria-current={route.view === v.name ? "page" : undefined}
-                  title={`g ${v.key}`}
-                >
-                  <span>{v.label}</span>
-                  {v.name === "approvals" && status && status.pending_approvals > 0 && (
-                    <span className="nav-count" aria-label={`${status.pending_approvals} pending`}>
-                      {status.pending_approvals}
-                    </span>
-                  )}
-                  {v.name === "tasks" && status && status.active_runs > 0 && (
-                    <span className="nav-count info" aria-label={`${status.active_runs} active runs`}>
-                      {status.active_runs}
-                    </span>
-                  )}
-                </a>
-              </li>
-            ))}
-          </ul>
-          <div className="sidebar-foot">
-            <button className="linkish" onClick={() => setHelp(true)}>
-              Keyboard shortcuts <kbd>?</kbd>
+          <div className="side-actions">
+            <button className="nav new-task" onClick={newTask} title="New task (⌘N)">
+              <Icon name="edit" />
+              <span className="nav-text">New task</span>
             </button>
-            {status && (
-              <span className="muted small">
-                tpd {status.version} · up {fmtUptime(status.uptime_ms)}
-              </span>
+            <button className="search-btn" onClick={() => setPalette("search")} title="Search (⌘K)">
+              <Icon name="search" />
+              <span>Search</span>
+              <kbd>⌘K</kbd>
+            </button>
+          </div>
+          <div className="side-scroll">
+            <ul>{VIEWS.filter((v) => v.group === "main").map(navItem)}</ul>
+            <div className="side-label">Factory</div>
+            <ul>{VIEWS.filter((v) => v.group === "factory").map(navItem)}</ul>
+            {recent.length > 0 && (
+              <>
+                <div className="side-label">Recent tasks</div>
+                <ul>
+                  {recent.map((t) => {
+                    const on = route.view === "tasks" && route.id === t.id;
+                    const live = isActiveState(t.state);
+                    return (
+                      <li key={t.id}>
+                        <a
+                          href={href({ view: "tasks", id: t.id })}
+                          className={`nav recent ${on ? "active" : ""}`}
+                          title={`${t.title} · ${t.project} · ${t.state.replace(/_/g, " ")}`}
+                        >
+                          <span className={`dot ${live ? "live" : taskTone(t.state)}`} />
+                          <span className="nav-text">{t.title}</span>
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
             )}
+          </div>
+          <div className="sidebar-foot">
+            <button
+              className="daemon"
+              onClick={() => navigate({ view: "settings" })}
+              title={status ? `tpd ${status.version} · pid ${status.pid} · ${status.factory_root}` : link.state === "offline" ? link.reason : "connecting"}
+            >
+              <span className={`dot ${status ? (status.mode === "normal" ? "ok" : status.mode === "safe" ? "bad" : "warn") : link.state === "offline" ? "bad" : ""}`} />
+              <span style={{ minWidth: 0 }}>
+                {status ? (status.mode === "normal" ? "Factory running" : status.mode === "safe" ? "Safe mode" : "Paused") : link.state === "offline" ? "Factory offline" : "Connecting…"}
+                <small>{status ? `tpd ${status.version} · up ${fmtUptime(status.uptime_ms)}` : "tpd"}</small>
+              </span>
+            </button>
+            <button className="icon-btn" onClick={() => setHelp(true)} title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
+              <Icon name="keyboard" />
+            </button>
           </div>
         </nav>
 
         <div className="main-col">
-          <header className="topbar">
-            <span className="crumb">{current?.label}</span>
-            <label className="scope">
-              <span className="sr-only">Project scope</span>
-              <select
-                value={project}
-                onChange={(e) => setProject(e.target.value)}
-                aria-label="Project scope"
-                title="Project scope (⌘P)"
-              >
-                <option value="">All projects</option>
-                {projects.map((p) => (
-                  <option key={p.slug} value={p.slug}>
-                    {p.slug}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button className="search-btn" onClick={() => setPalette("search")} aria-label="Search (⌘K)">
-              <span>Search…</span>
-              <kbd>⌘K</kbd>
-            </button>
-            <div className="topbar-right">
-              {status && status.pending_approvals > 0 && (
-                <button className="pill warn" onClick={() => navigate({ view: "approvals" })}>
-                  {status.pending_approvals} pending approval{status.pending_approvals === 1 ? "" : "s"}
-                </button>
+          <header className="topbar" data-tauri-drag-region>
+            {collapsed && (
+              <button className="icon-btn" onClick={toggleSidebar} title="Show sidebar (⌘\)" aria-label="Show sidebar">
+                <Icon name="sidebar" />
+              </button>
+            )}
+            <span className="crumb" data-tauri-drag-region>
+              {route.view === "tasks" && route.id ? (
+                <>
+                  <a href="#/tasks">Tasks</a>
+                  <Icon name="chevronRight" size={13} className="muted" />
+                  <span className="mono">{route.id}</span>
+                </>
+              ) : route.view === "projects" && route.id ? (
+                <>
+                  <a href="#/projects">Projects</a>
+                  <Icon name="chevronRight" size={13} className="muted" />
+                  <span>{route.id}</span>
+                </>
+              ) : route.view === "overview" ? null : (
+                current?.label
               )}
+            </span>
+            <div className="topbar-right">
               {status && status.mode !== "normal" && (
                 <button className={`pill ${status.mode === "safe" ? "bad" : "warn"}`} onClick={() => navigate({ view: "settings" })}>
+                  <Icon name={status.mode === "safe" ? "shield" : "pause"} size={13} />
                   {status.mode === "safe" ? "Safe mode" : "Paused"}
                 </button>
               )}
-              <DaemonBadge link={link} />
+              {status && status.pending_approvals > 0 && route.view !== "approvals" && (
+                <button className="pill accent" onClick={() => navigate({ view: "approvals" })}>
+                  <Icon name="inbox" size={13} />
+                  {status.pending_approvals} awaiting you
+                </button>
+              )}
+              <label className="scope">
+                <span className="sr-only">Project scope</span>
+                <select value={project} onChange={(e) => setProject(e.target.value)} aria-label="Project scope" title="Project scope (⌘P)">
+                  <option value="">All projects</option>
+                  {projects.map((p) => (
+                    <option key={p.slug} value={p.slug}>
+                      {p.slug}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           </header>
 
           {link.state === "offline" && (
             <div className="offline-banner" role="alert">
-              <strong>tpd offline</strong> — work is not running from this window; start with{" "}
-              <code>tp daemon install</code>
-              <span className="muted"> ({link.reason})</span>
-              <button
-                className="btn small primary"
-                disabled={starting}
-                onClick={() => {
-                  setStarting(true);
-                  invoke<string>("install_daemon")
-                    .then(() => refresh())
-                    .catch((e) => window.alert(`Could not start tpd:\n${String(e)}`))
-                    .finally(() => setStarting(false));
-                }}
-              >
-                {starting ? "Starting…" : "Start factory"}
-              </button>
-              <button className="btn small" onClick={() => void refresh()}>
+              <span className="dot bad" />
+              <span className="grow">
+                <strong>The factory is not running</strong>
+                <span className="muted small">
+                  Agents only work while tpd runs in the background. {link.reason && `(${link.reason})`}
+                </span>
+              </span>
+              <button className="btn small ghost" onClick={() => void refresh()}>
                 Retry
               </button>
+              {inTauri && (
+                <button className="btn small accent" disabled={starting} onClick={startFactory}>
+                  {starting ? "Starting…" : "Start factory"}
+                </button>
+              )}
             </div>
           )}
 
-          <main id="main" tabIndex={-1}>
+          <main id="main" tabIndex={-1} className={isFlush(route) ? "flush" : ""}>
             <ViewBoundary key={route.view}>
-              <Suspense fallback={<Loading what="Loading view" />}>
+              <Suspense fallback={<Loading what="Loading" />}>
                 <View route={route} />
               </Suspense>
             </ViewBoundary>
@@ -302,6 +409,7 @@ export default function App() {
           </Suspense>
         )}
         {help && <HelpOverlay onClose={() => setHelp(false)} />}
+        <Toaster />
       </div>
     </AppContext.Provider>
   );
@@ -327,18 +435,6 @@ class ViewBoundary extends Component<{ children: ReactNode }, { error: string | 
   }
 }
 
-function DaemonBadge({ link }: { link: Link }) {
-  if (link.state === "online") {
-    const s = link.status;
-    return (
-      <span className="badge online" title={`tpd ${s.version} · pid ${s.pid} · ${s.factory_root}`}>
-        tpd online · {s.mode}
-      </span>
-    );
-  }
-  return <span className={`badge ${link.state}`}>{link.state === "offline" ? "tpd offline" : "connecting"}</span>;
-}
-
 // ------------------------------------------------------------ shortcuts
 
 function isTyping(t: EventTarget | null): boolean {
@@ -351,6 +447,8 @@ function isTyping(t: EventTarget | null): boolean {
 function useShortcuts(h: {
   openPalette: (mode: "search" | "project") => void;
   toggleHelp: () => void;
+  toggleSidebar: () => void;
+  newTask: () => void;
   closeAll: () => void;
 }) {
   const ref = useRef(h);
@@ -359,14 +457,25 @@ function useShortcuts(h: {
     let gAt = 0;
     const onKey = (e: KeyboardEvent) => {
       const meta = e.metaKey || e.ctrlKey;
-      if (meta && e.key.toLowerCase() === "k") {
+      const k = e.key.toLowerCase();
+      if (meta && k === "k") {
         e.preventDefault();
         ref.current.openPalette("search");
         return;
       }
-      if (meta && e.key.toLowerCase() === "p") {
+      if (meta && k === "p") {
         e.preventDefault();
         ref.current.openPalette("project");
+        return;
+      }
+      if (meta && k === "n") {
+        e.preventDefault();
+        ref.current.newTask();
+        return;
+      }
+      if (meta && e.key === "\\") {
+        e.preventDefault();
+        ref.current.toggleSidebar();
         return;
       }
       if (e.key === "Escape") {
@@ -409,6 +518,28 @@ function HelpOverlay({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     box.current?.focus();
   }, []);
+  const rows: [ReactNode, string][] = [
+    [<kbd key="n">⌘N</kbd>, "New task"],
+    [
+      <>
+        <kbd>⌘K</kbd> or <kbd>/</kbd>
+      </>,
+      "Search everything",
+    ],
+    [<kbd key="p">⌘P</kbd>, "Switch project scope"],
+    [<kbd key="b">⌘\</kbd>, "Show or hide the sidebar"],
+    ...VIEWS.map(
+      (v) =>
+        [
+          <>
+            <kbd>g</kbd> <kbd>{v.key}</kbd>
+          </>,
+          v.label,
+        ] as [ReactNode, string],
+    ),
+    [<kbd key="q">?</kbd>, "Toggle this help"],
+    [<kbd key="e">Esc</kbd>, "Close dialogs"],
+  ];
   return (
     <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div
@@ -428,38 +559,12 @@ function HelpOverlay({ onClose }: { onClose: () => void }) {
         </div>
         <table className="shortcuts">
           <tbody>
-            <tr>
-              <td>
-                <kbd>⌘K</kbd> or <kbd>/</kbd>
-              </td>
-              <td>Search everything</td>
-            </tr>
-            <tr>
-              <td>
-                <kbd>⌘P</kbd>
-              </td>
-              <td>Switch project scope</td>
-            </tr>
-            {VIEWS.map((v) => (
-              <tr key={v.name}>
-                <td>
-                  <kbd>g</kbd> <kbd>{v.key}</kbd>
-                </td>
-                <td>{v.label}</td>
+            {rows.map(([k, l], i) => (
+              <tr key={i}>
+                <td>{k}</td>
+                <td>{l}</td>
               </tr>
             ))}
-            <tr>
-              <td>
-                <kbd>?</kbd>
-              </td>
-              <td>Toggle this help</td>
-            </tr>
-            <tr>
-              <td>
-                <kbd>Esc</kbd>
-              </td>
-              <td>Close dialogs</td>
-            </tr>
           </tbody>
         </table>
       </div>

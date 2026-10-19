@@ -15,7 +15,7 @@ export default function Settings({ route }: { route: Route }) {
   }, [route.id]);
   return (
     <div className="page">
-      <PageHeader title="Settings & Safety" sub="Emergency controls apply immediately and are audited. The same controls exist in the CLI and on your phone." />
+      <PageHeader title="Settings & safety" sub="Emergency controls apply immediately and are audited. The same controls exist in the CLI." />
       <div className="grid two">
         <Controls />
         <StopAll />
@@ -84,7 +84,7 @@ function Controls() {
           />
           <Toggle
             label="Remote access"
-            hint="Allow paired phones to reach tpd through the relay."
+            hint="Allow paired phones to reach tpd through the relay. The mobile app is not built yet."
             checked={c.remote_access}
             disabled={act.busy}
             onChange={(v) => void set({ remote_access: v })}
