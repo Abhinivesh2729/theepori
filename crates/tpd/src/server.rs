@@ -315,6 +315,11 @@ fn handle(st: &State, actor: &str, method: &str, params: Value) -> HResult {
         method::PROJECT_LIST => ok(e.db(registry::list)),
         method::PROJECT_ADD => {
             let req: ProjectAdd = p(params)?;
+            tp_core::doctor::can_access(
+                std::path::Path::new(&req.repo_path),
+                Duration::from_secs(5),
+            )
+            .map_err(|m| (ErrorCode::InvalidParams, m))?;
             let project = e.db(|c| registry::add(c, &e.paths, &req)).map_err(err)?;
             project_config::init_project_files(
                 &e.paths,

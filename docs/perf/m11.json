@@ -1,0 +1,46 @@
+{
+  "milestone": "M0",
+  "measured_at": "2026-10-19T14:36:45+0530",
+  "machine": {
+    "model": "MacBookPro15,1",
+    "cpu": "Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz",
+    "memory_gb": 32,
+    "macos": "15.7.9"
+  },
+  "build": "release",
+  "tpd_cold_start_ms": {
+    "runs": [
+      440.1,
+      68.9,
+      64.3,
+      65.4,
+      65.1
+    ],
+    "p50": 65.44,
+    "p95": 440.08
+  },
+  "ipc_status_roundtrip_ms": {
+    "max_ms": 0.292,
+    "p50_ms": 0.084,
+    "p95_ms": 0.151,
+    "p99_ms": 0.188,
+    "n": 2000
+  },
+  "desktop_first_paint_ms": {
+    "cold": 883.5,
+    "warm_runs": [
+      686.7,
+      681.5,
+      692.0,
+      695.7
+    ],
+    "warm_p95": 695.7
+  },
+  "gui_close_leaves_tpd_running": true,
+  "targets": {
+    "warm_start_p95_ms": 500,
+    "cold_start_ms": 1000,
+    "interaction_p95_ms": 50
+  },
+  "within_targets": false
+}

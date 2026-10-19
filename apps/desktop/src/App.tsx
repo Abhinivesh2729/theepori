@@ -66,6 +66,7 @@ function readScope(): string {
 
 export default function App() {
   const route = useHashRoute();
+  const [starting, setStarting] = useState(false);
   const [link, setLink] = useState<Link>({ state: "connecting" });
   const [projects, setProjects] = useState<Project[]>([]);
   const [project, setProjectState] = useState(readScope);
@@ -267,6 +268,19 @@ export default function App() {
               <strong>tpd offline</strong> — work is not running from this window; start with{" "}
               <code>tp daemon install</code>
               <span className="muted"> ({link.reason})</span>
+              <button
+                className="btn small primary"
+                disabled={starting}
+                onClick={() => {
+                  setStarting(true);
+                  invoke<string>("install_daemon")
+                    .then(() => refresh())
+                    .catch((e) => window.alert(`Could not start tpd:\n${String(e)}`))
+                    .finally(() => setStarting(false));
+                }}
+              >
+                {starting ? "Starting…" : "Start factory"}
+              </button>
               <button className="btn small" onClick={() => void refresh()}>
                 Retry
               </button>

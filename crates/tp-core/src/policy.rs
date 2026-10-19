@@ -442,7 +442,10 @@ pub fn resolve(p: &Path) -> PathBuf {
             }
             return out;
         }
-        match (existing.file_name().map(|f| f.to_os_string()), existing.parent()) {
+        match (
+            existing.file_name().map(|f| f.to_os_string()),
+            existing.parent(),
+        ) {
             (Some(name), Some(parent)) => {
                 rest.push(name);
                 existing = parent.to_path_buf();
@@ -928,7 +931,12 @@ mod tests {
         assert!(!decide_tool(&rv, "Bash", &json!({"command": "cargo test"})).allow);
         assert!(!decide_tool(&rv, "Edit", &json!({"file_path": "src/a.rs"})).allow);
         assert!(!decide_tool(&scope(RunKind::Manager), "Read", &json!({})).allow);
-        for k in [RunKind::Review, RunKind::Steward, RunKind::Manager, RunKind::Implement] {
+        for k in [
+            RunKind::Review,
+            RunKind::Steward,
+            RunKind::Manager,
+            RunKind::Implement,
+        ] {
             assert!(decide_tool(&scope(k), "StructuredOutput", &json!({})).allow);
         }
     }
@@ -940,7 +948,11 @@ mod tests {
         std::fs::create_dir_all(real.join("wt")).unwrap();
         let link = d.path().join("link");
         std::os::unix::fs::symlink(&real, &link).unwrap();
-        let s = RunScope { worktree: link.join("wt"), factory_root: link.clone(), ..scope(RunKind::Implement) };
+        let s = RunScope {
+            worktree: link.join("wt"),
+            factory_root: link.clone(),
+            ..scope(RunKind::Implement)
+        };
         let via_real = real.join("wt/new/file.rs").display().to_string();
         let d1 = decide_tool(&s, "Write", &json!({"file_path": via_real}));
         assert!(d1.allow, "{d1:?}");

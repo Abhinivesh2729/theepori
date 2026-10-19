@@ -85,6 +85,17 @@ pub fn install(home: &Path, label: &str, tpd_src: &Path, paths: &FactoryPaths) -
     let tmp = dir.join(".tpd.new");
     std::fs::copy(tpd_src, &tmp).map_err(|e| Error::io(&tmp, e))?;
     std::fs::rename(&tmp, &tpd).map_err(|e| Error::io(&tpd, e))?;
+    // tpd runs `tp hook` / `tp mcp` for agent runs; keep the matching tp beside it.
+    if let Some(tp_src) = tpd_src
+        .parent()
+        .map(|d| d.join("tp"))
+        .filter(|p| p.is_file())
+    {
+        let tp = dir.join("tp");
+        let tmp_tp = dir.join(".tp.new");
+        std::fs::copy(&tp_src, &tmp_tp).map_err(|e| Error::io(&tmp_tp, e))?;
+        std::fs::rename(&tmp_tp, &tp).map_err(|e| Error::io(&tp, e))?;
+    }
     let tpd = tpd.as_path();
     let path = plist_path(home, label);
     if let Some(dir) = path.parent() {

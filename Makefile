@@ -1,5 +1,5 @@
 # Thee Pori software factory (macOS only). See docs/FACTORY_DESIGN.md.
-.PHONY: build test lint desktop perf install-daemon clean site site-deploy
+.PHONY: build test lint desktop app perf install-daemon clean site site-deploy
 
 build:
 	cargo build --release -p tpd -p tp-cli
@@ -13,7 +13,9 @@ lint:
 	cd apps/desktop && npm run typecheck
 
 desktop:
-	cd apps/desktop && npm ci && npx tauri build
+	sh scripts/build-app.sh
+
+app: desktop
 
 perf: build desktop
 	python3 -I scripts/perf.py

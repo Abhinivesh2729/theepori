@@ -33,6 +33,11 @@ jobs:
       - name: desktop frontend (typecheck + build)
         working-directory: apps/desktop
         run: npm ci && npm run build
+      - name: placeholder sidecars (the app bundles tp/tpd; see scripts/build-app.sh)
+        run: |
+          T="$(rustc -vV | sed -n 's/^host: //p')"
+          mkdir -p apps/desktop/src-tauri/binaries
+          for b in tp tpd; do printf '#!/bin/sh\n' > "apps/desktop/src-tauri/binaries/$b-$T"; chmod +x "apps/desktop/src-tauri/binaries/$b-$T"; done
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
