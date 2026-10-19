@@ -1,19 +1,24 @@
 #![cfg_attr(test, allow(clippy::unwrap_used))]
 //! Factory core: everything `tpd`, the `tp` CLI and the desktop app share.
 
+pub mod analytics;
 pub mod audit;
 pub mod client;
 pub mod config;
 pub mod db;
+pub mod deploy;
 pub mod doctor;
+pub mod engine;
 pub mod git;
 pub mod github;
 pub mod hook;
 pub mod jira;
 pub mod launchd;
 pub mod manager;
+pub mod memory;
 pub mod paths;
 pub mod policy;
+pub mod portability;
 pub mod project_config;
 pub mod redact;
 pub mod registry;
