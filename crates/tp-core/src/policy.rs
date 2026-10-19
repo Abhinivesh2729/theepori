@@ -238,6 +238,10 @@ const HARMLESS: &[&str] = &[
 
 /// Decides one PreToolUse call. Deny wins; unknown tools are denied.
 pub fn decide_tool(scope: &RunScope, tool: &str, input: &Value) -> ToolDecision {
+    // Claude Code's structured-output channel (--json-schema); carries no side effects.
+    if tool == "StructuredOutput" {
+        return ToolDecision::allow("tool.structured_output");
+    }
     match scope.kind {
         RunKind::Steward => {
             return if tool.starts_with("mcp__claude_ai_Atlassian__") || tool == "ToolSearch" {
@@ -425,7 +429,36 @@ pub fn normalize(base: &Path, p: &str) -> PathBuf {
     out
 }
 
+/// Resolves symlinks in the longest existing prefix of `p` (so `/tmp/x` and
+/// `/private/tmp/x` compare equal on macOS), keeping the non-existent rest.
+pub fn resolve(p: &Path) -> PathBuf {
+    let mut existing = p.to_path_buf();
+    let mut rest: Vec<std::ffi::OsString> = Vec::new();
+    loop {
+        if let Ok(c) = existing.canonicalize() {
+            let mut out = c;
+            for r in rest.iter().rev() {
+                out.push(r);
+            }
+            return out;
+        }
+        match (existing.file_name().map(|f| f.to_os_string()), existing.parent()) {
+            (Some(name), Some(parent)) => {
+                rest.push(name);
+                existing = parent.to_path_buf();
+            }
+            _ => return p.to_path_buf(),
+        }
+    }
+}
+
 fn check_path(scope: &RunScope, input: &Value, edit: bool) -> ToolDecision {
+    let scope = &RunScope {
+        worktree: resolve(&scope.worktree),
+        factory_root: resolve(&scope.factory_root),
+        home: resolve(&scope.home),
+        ..scope.clone()
+    };
     let Some(raw) = input_path(input) else {
         return if edit {
             ToolDecision::deny("path.missing", "edit without a path")
@@ -433,7 +466,7 @@ fn check_path(scope: &RunScope, input: &Value, edit: bool) -> ToolDecision {
             ToolDecision::allow("path.none")
         };
     };
-    let path = normalize(&scope.worktree, raw);
+    let path = resolve(&normalize(&scope.worktree, raw));
     let name = path
         .file_name()
         .and_then(|n| n.to_str())
@@ -895,6 +928,24 @@ mod tests {
         assert!(!decide_tool(&rv, "Bash", &json!({"command": "cargo test"})).allow);
         assert!(!decide_tool(&rv, "Edit", &json!({"file_path": "src/a.rs"})).allow);
         assert!(!decide_tool(&scope(RunKind::Manager), "Read", &json!({})).allow);
+        for k in [RunKind::Review, RunKind::Steward, RunKind::Manager, RunKind::Implement] {
+            assert!(decide_tool(&scope(k), "StructuredOutput", &json!({})).allow);
+        }
+    }
+
+    #[test]
+    fn symlinked_spellings_match() {
+        let d = tempfile::tempdir().unwrap();
+        let real = d.path().join("real");
+        std::fs::create_dir_all(real.join("wt")).unwrap();
+        let link = d.path().join("link");
+        std::os::unix::fs::symlink(&real, &link).unwrap();
+        let s = RunScope { worktree: link.join("wt"), factory_root: link.clone(), ..scope(RunKind::Implement) };
+        let via_real = real.join("wt/new/file.rs").display().to_string();
+        let d1 = decide_tool(&s, "Write", &json!({"file_path": via_real}));
+        assert!(d1.allow, "{d1:?}");
+        let outside = real.join("other.rs").display().to_string();
+        assert!(!decide_tool(&s, "Write", &json!({"file_path": outside})).allow);
     }
 
     #[test]

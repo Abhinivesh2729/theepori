@@ -302,8 +302,12 @@ impl Engine {
 
     pub fn retry_task(&self, id: &str, actor: &str) -> Result<TaskSummary> {
         let n = store::parse_id('T', id)?;
-        self.db(|c| store::set_task_field(c, n, "attempts", &0))?;
-        self.db(|c| store::record_intervention(c, Some(n), "retry", 1.0))?;
+        // A retry starts a fresh agent session: the old one may hold stale conclusions.
+        self.db(|c| {
+            store::set_task_field(c, n, "attempts", &0)?;
+            store::set_task_field(c, n, "session_id", &rusqlite::types::Null)?;
+            store::record_intervention(c, Some(n), "retry", 1.0)
+        })?;
         self.transition(
             n,
             TaskState::Approved,
