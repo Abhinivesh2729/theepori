@@ -424,6 +424,11 @@ fn daemon_cmd(paths: &FactoryPaths, cmd: DaemonCmd) -> Result<ExitCode> {
 fn add_direct(paths: &FactoryPaths, req: &ProjectAdd) -> Result<Project> {
     let mut conn = open_db(paths)?;
     let p = registry::add(&conn, paths, req)?;
+    tp_core::project_config::init_project_files(
+        paths,
+        &p.slug,
+        std::path::Path::new(&p.repo_path),
+    )?;
     AuditLog::new(paths).append(
         &mut conn,
         NewEvent::new(ActorKind::Human, actor(), "project.added")

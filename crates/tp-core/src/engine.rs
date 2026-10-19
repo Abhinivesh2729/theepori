@@ -2656,6 +2656,15 @@ impl Engine {
     /// their tasks go back to the queue (they resume their session).
     pub fn recover(&self) -> Result<u32> {
         let mut n_rec = 0;
+        // Projects registered while tpd was down (or by older builds) may lack
+        // project.yaml / verify.yaml; creating them is idempotent.
+        for p in self.db(registry::list)? {
+            if let Err(e) =
+                project_config::init_project_files(&self.paths, &p.slug, Path::new(&p.repo_path))
+            {
+                eprintln!("tpd: cannot create config for project {}: {e}", p.slug);
+            }
+        }
         for (rid, task, pid, _) in self.db(store::active_runs)? {
             if pid.is_some_and(|p| crate::runtime::pid_alive(p as u32))
                 && let Some(p) = pid
@@ -3243,6 +3252,36 @@ mod tests {
             "task {id} never reached {want:?}: {:?}",
             e.task_detail(id).unwrap()
         );
+    }
+
+    #[test]
+    fn recover_creates_missing_project_config() {
+        let fx = fixture("CHANGES.md");
+        let e = &fx.engine;
+        let d = tempfile::tempdir().unwrap();
+        let repo = crate::git::testutil::repo(d.path());
+        // Registered without config files, as `tp project add` did while tpd was down.
+        e.db(|c| {
+            registry::add(
+                c,
+                &e.paths,
+                &ProjectAdd {
+                    repo_path: repo.display().to_string(),
+                    slug: Some("offline".into()),
+                    name: None,
+                    jira_key: None,
+                },
+            )
+        })
+        .unwrap();
+        let py = project_config::project_yaml(&e.paths, "offline");
+        assert!(!py.exists());
+        e.recover().unwrap();
+        assert!(py.exists());
+        assert!(project_config::verify_yaml(&e.paths, "offline").exists());
+        // Existing (hand-edited) config is left alone.
+        let app = std::fs::read_to_string(project_config::project_yaml(&e.paths, "app")).unwrap();
+        assert!(app.contains("github: o/app"));
     }
 
     #[test]
